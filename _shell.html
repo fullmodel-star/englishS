@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1f8fd6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="英語拼句">
+<title>英語拼句 · 國中文法</title>
+<style>
+  :root{
+    --green:#58cc02; --green-d:#4caf00; --green-l:#d7ffb8;
+    --blue:#5bc0eb; --red:#ff6b81; --gold:#ffb703;
+    --brand:#1f8fd6; --brand-d:#177bbd;
+    --ink:#3c3c3c; --gray:#e5e5e5; --gray-d:#afafaf; --bg:#fff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#e9f5fd 0,#f5faff 200px,#ffffff 460px);
+    display:flex;flex-direction:column;align-items:center;overflow:hidden;user-select:none;
+  }
+  #app{width:100%;max-width:520px;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .screen{flex:1;overflow-y:auto;display:none;flex-direction:column}
+  .screen.on{display:flex}
+  .pad{padding:16px 18px 24px}
+  .hdr{text-align:center;padding:20px 18px 6px}
+  .hdr h1{font-size:24px;margin:0;color:var(--brand);letter-spacing:.5px}
+  .hdr p{margin:5px 0 0;color:var(--gray-d);font-size:12.5px}
+  .hero{margin:14px 14px 10px;border-radius:26px;padding:24px 20px 18px;color:#fff;text-align:center;
+    background:linear-gradient(135deg,#5cc0f0 0,#1f8fd6 100%);
+    box-shadow:0 12px 26px -10px rgba(31,143,214,.42)}
+  .hero h1{margin:0;font-size:30px;font-weight:900;letter-spacing:2px;text-shadow:0 2px 4px rgba(0,0,0,.15)}
+  .hero p{margin:7px 0 0;font-size:12.5px;opacity:.96}
+  .hero .stats{display:flex;gap:10px;margin-top:18px}
+  .hero .stats .st{flex:1;background:#fff;border-radius:16px;padding:11px 4px;
+    box-shadow:0 6px 14px -6px rgba(0,0,0,.25)}
+  .hero .stats .st b{display:block;font-size:20px;font-weight:900;color:#1f8fd6}
+  .hero .stats .st small{font-size:10.5px;color:#8a8a8a;font-weight:600}
+
+  /* ---- stage cards ---- */
+  .card{position:relative;display:flex;align-items:center;gap:15px;border-radius:20px;padding:15px 16px;
+    margin-bottom:15px;cursor:pointer;transition:transform .12s,box-shadow .12s;--c:#43a047;background:#fff;
+    border:1px solid color-mix(in srgb,var(--c) 16%,#eee);
+    box-shadow:0 12px 24px -14px color-mix(in srgb,var(--c) 75%,transparent),0 2px 5px rgba(0,0,0,.04)}
+  .card:active{transform:translateY(2px);box-shadow:0 6px 12px -8px color-mix(in srgb,var(--c) 60%,transparent)}
+  .card.cur{border:2px solid var(--c);background:color-mix(in srgb,var(--c) 6%,#fff)}
+  .card.lockcard{cursor:default;background:#fbfbfb;border-color:#eee;box-shadow:0 3px 8px rgba(0,0,0,.03)}
+  .ring{width:54px;height:54px;border-radius:17px;flex:none;display:grid;place-items:center;font-size:27px;
+    color:#fff;background:linear-gradient(140deg,color-mix(in srgb,var(--c) 78%,#fff),var(--c));
+    box-shadow:0 5px 12px -4px color-mix(in srgb,var(--c) 65%,transparent)}
+  .card.lockcard .ring{background:#ededed;box-shadow:none;filter:grayscale(1);font-size:22px;opacity:.6}
+  .ring i{display:contents}
+  .card .info{flex:1;min-width:0}
+  .card .info b{font-size:16.5px;display:block;font-weight:800;color:#363636}
+  .card.lockcard .info b{color:#a2a2a2}
+  .card .info small{font-size:12px;display:block;margin-top:3px;font-weight:600;color:#9c9c9c}
+  .card .arw{font-size:24px;font-weight:800;color:var(--c)}
+
+  /* ---- unit path ---- */
+  .backbar{display:flex;align-items:center;gap:8px;padding:16px 16px 8px;font-weight:800;font-size:17px}
+  .backbar button{font-size:26px;background:none;border:none;cursor:pointer;color:var(--gray-d);line-height:1;
+    min-width:44px;min-height:44px;display:grid;place-items:center;margin-left:-8px}
+  .path{padding:8px 16px 30px}
+  .unode{display:flex;align-items:center;gap:13px;background:#fff;border-radius:18px;padding:13px 14px;
+    margin-bottom:12px;box-shadow:0 3px 10px rgba(0,0,0,.05);border:1.5px solid #f2f2f2;--c:#7ac74f}
+  .unode.open{cursor:pointer;transition:transform .1s,box-shadow .1s}
+  .unode.open:active{transform:scale(.98)}
+  .unode.cur{border:2px solid var(--c);box-shadow:0 4px 14px color-mix(in srgb,var(--c) 35%,transparent)}
+  .unode .udot{width:50px;height:50px;border-radius:16px;flex:none;display:grid;place-items:center;
+    font-size:25px;color:#fff;background:linear-gradient(140deg,color-mix(in srgb,var(--c) 80%,#fff),var(--c));
+    box-shadow:0 5px 12px -4px color-mix(in srgb,var(--c) 65%,transparent)}
+  .unode.lock .udot{background:#ededed;box-shadow:none;font-size:20px;filter:grayscale(1) opacity(.55)}
+  .unode .ulab{flex:1;min-width:0}
+  .unode .ulab b{font-size:15.5px;font-weight:800;display:block}
+  .unode.lock .ulab b{color:#a6a6a6}
+  .unode .ulab small{color:#707070;font-size:12px;display:block;margin-top:3px}
+  .unode .ust{flex:none;font-weight:800}
+  .unode .ust .st-star{color:var(--gold);letter-spacing:1px;font-size:14px}
+  .unode .ust .st-go{background:var(--c);color:#fff;border-radius:13px;padding:6px 15px;font-size:12.5px;
+    box-shadow:0 3px 0 color-mix(in srgb,var(--c) 60%,#000)}
+  .unode .ust .st-lock{color:#d2d2d2;font-size:20px}
+
+  /* ---- progress dashboard ---- */
+  .big-ring{width:130px;height:130px;border-radius:50%;margin:6px auto 2px;display:grid;place-items:center;
+    background:conic-gradient(var(--brand) var(--p),var(--gray) 0)}
+  .big-ring i{width:104px;height:104px;border-radius:50%;background:#fff;display:grid;place-items:center;
+    flex-direction:column;font-style:normal;text-align:center}
+  .big-ring i b{font-size:28px;color:var(--brand)} .big-ring i small{color:var(--gray-d);font-size:12px}
+  .kpis{display:flex;gap:10px;margin:14px 0}
+  .kpi{flex:1;background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:14px;
+    padding:12px 6px;text-align:center}
+  .kpi b{display:block;font-size:22px} .kpi small{color:var(--gray-d);font-size:11.5px}
+  .sec-t{font-weight:800;margin:18px 0 8px;font-size:15px}
+  .prow{background:#fff;border:1px solid #f0f0f0;border-radius:14px;padding:12px 14px;margin-bottom:11px;
+    box-shadow:0 2px 6px rgba(0,0,0,.04)}
+  .prow .pr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .prow .nm{font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:7px}
+  .prow .pc{color:var(--gray-d);font-weight:700;font-size:13px;flex:none}
+  .prow .tb{height:12px;background:var(--gray);border-radius:6px;overflow:hidden}
+  .prow .tb>i{display:block;height:100%;border-radius:6px;min-width:0;transition:width .4s}
+
+  /* ---- mistakes ---- */
+  .mist-hero{text-align:center;padding:10px 0 4px}
+  .mist-hero .n{font-size:44px;font-weight:800;color:var(--red)}
+  .mi{background:#fff;border:2px solid var(--gray);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .mi .zh{font-weight:700;font-size:15px}
+  .mi .en{color:#6b6b6b;font-size:13.5px;margin-top:3px}
+  .mi .box{float:right;font-size:11px;color:#fff;background:var(--gold);border-radius:8px;padding:2px 7px;font-weight:700}
+  .empty{text-align:center;color:var(--gray-d);padding:50px 20px;font-size:14px;line-height:1.8}
+
+  /* ---- lesson ---- */
+  #lesson{padding:12px 16px 16px}
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .x{font-size:26px;color:var(--gray-d);background:none;border:none;cursor:pointer;line-height:1;
+    min-width:44px;min-height:44px;display:grid;place-items:center}
+  .bar{flex:1;height:14px;background:var(--gray);border-radius:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--brand);border-radius:8px;width:0;transition:width .3s}
+  .hearts{color:var(--red);font-weight:800;font-size:16px;min-width:34px;text-align:right}
+  .qwrap{flex:1;display:flex;flex-direction:column;padding-top:14px}
+  .qright{display:flex;flex-direction:column;flex:1;min-height:0}
+  .qhint{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-d);margin-bottom:8px}
+  .lchip{margin-left:auto;border:2px solid var(--blue);color:var(--blue);border-radius:20px;
+    padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#fff}
+  .lchip.on{background:var(--blue);color:#fff}
+  .speak{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .spk-btn{width:60px;height:60px;border-radius:16px;border:2px solid var(--blue);border-bottom-width:5px;
+    background:var(--blue);color:#fff;font-size:26px;cursor:pointer;flex:none}
+  .spk-btn:active{transform:translateY(2px);border-bottom-width:3px}
+  .zh{font-size:22px;font-weight:700;line-height:1.4}
+  .answer{margin-top:18px;min-height:96px;border:2px dashed #e0e0e0;border-radius:16px;background:#fafbf8;
+    padding:13px;display:flex;flex-wrap:wrap;gap:9px;align-content:flex-start;position:relative}
+  .answer:empty::before{content:"👇 點下方詞塊，依序排出句子";position:absolute;left:15px;top:16px;
+    color:#a0a0a0;font-size:13px;font-weight:600}
+  .bank{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:56px}
+  .tile{background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:13px;
+    padding:10px 15px;font-size:20px;cursor:pointer;transition:transform .06s;font-weight:600}
+  .tile:active{transform:translateY(2px)}
+  .tile.hole{background:var(--gray);border-color:var(--gray);color:transparent;pointer-events:none}
+  .tile.punc{color:var(--gray-d)}
+  .check{margin-top:auto;padding-top:16px}
+  .btn{width:100%;padding:15px;border:none;border-radius:16px;font-size:17px;font-weight:800;cursor:pointer;
+    color:#fff;background:var(--gray-d);border-bottom:5px solid rgba(0,0,0,.18)}
+  .btn.go{background:var(--brand);border-bottom-color:var(--brand-d)}
+  .btn:disabled{opacity:.55} .btn:active{transform:translateY(2px);border-bottom-width:2px}
+  .sheet{position:absolute;left:0;right:0;bottom:0;padding:18px 16px 22px;border-radius:22px 22px 0 0;
+    transform:translateY(110%);transition:transform .25s;z-index:20}
+  .sheet.show{transform:translateY(0)}
+  .sheet.ok{background:var(--green-l)} .sheet.no{background:#ffdfe0}
+  .sheet .hd{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
+  .sheet.ok .hd{color:var(--green-d)} .sheet.no .hd{color:var(--red)}
+  .sheet .sol{margin:8px 0 14px;font-size:15px}
+  .shake{animation:sh .35s}
+  @keyframes sh{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+  /* ---- done ---- */
+  #done{align-items:center;justify-content:center;text-align:center;padding:30px;gap:6px}
+  #done .big{font-size:66px} #done h2{margin:4px 0;color:var(--brand)}
+  #done .stat{display:flex;gap:14px;margin:16px 0 26px}
+  #done .stat div{background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:16px;padding:12px 20px}
+  #done .stat b{display:block;font-size:24px} #done .stat small{color:var(--gray-d)}
+
+  /* ---- bottom nav ---- */
+  nav{display:flex;border-top:2px solid var(--gray);background:#fff}
+  nav.hide{display:none}
+  nav button{flex:1;background:none;border:none;padding:11px 0 10px;cursor:pointer;color:var(--gray-d);
+    font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+  nav button .ni{font-size:21px}
+  nav button.act{color:var(--brand)}
+  .badge{position:relative}
+  .badge[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolute;top:-3px;right:50%;
+    transform:translateX(18px);background:var(--red);color:#fff;font-size:10px;border-radius:9px;padding:0 5px;font-weight:800}
+
+  /* 題目 emoji 輔助 */
+  .qemoji{font-size:44px;text-align:center;line-height:1;margin-bottom:6px;min-height:0}
+  .qemoji:empty{display:none}
+  /* 已排入答題框的詞塊：藍色描邊區分 + 排入微動畫 */
+  .answer .tile{border-color:var(--brand);background:#eaf6fd;color:#0d6ba8;animation:pop .14s ease}
+  .tile.bad{border-color:var(--red)!important;background:#ffe9ec!important;color:var(--red)!important}
+  @keyframes pop{0%{transform:scale(.7);opacity:.3}100%{transform:scale(1);opacity:1}}
+  /* 提示鈕 + 檢查鈕並排 */
+  .check{display:flex;gap:10px}
+  .check .btn{flex:1;width:auto}
+  .btn.hint{flex:none!important;padding:15px 16px;background:#fff;color:#e69500;
+    border:2px solid var(--gold);border-bottom:5px solid #e0a000}
+  /* 愛心用完彈窗 */
+  .modal-wrap{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:24px}
+  .modal-wrap.show{display:flex}
+  .modal{background:#fff;border-radius:24px;padding:26px 22px;max-width:340px;width:100%;text-align:center;
+    box-shadow:0 20px 44px rgba(0,0,0,.32);animation:pop .2s ease}
+  .modal .m-emoji{font-size:52px}
+  .modal .m-title{font-size:21px;font-weight:800;margin:8px 0 6px}
+  .modal .m-msg{color:#888;font-size:13.5px;margin-bottom:20px;line-height:1.6}
+
+  /* ===== 平板／橫式 寬螢幕自適應 ===== */
+  @media (min-width:700px){
+    #app{max-width:1000px}
+    /* 首頁關卡卡片：雙欄 */
+    #learn .pad{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;align-content:start}
+    /* 單元路徑：雙欄 */
+    .path{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+    /* 進度／錯題本：置中不要拉太寬 */
+    #progress .pad,#mistakes .pad{max-width:700px;margin:0 auto;width:100%}
+    #progress .kpis .kpi b{font-size:24px}
+    /* 課程：寬螢幕改「置中單欄(加寬)」，避免雙欄左側空蕩 */
+    #lesson{align-items:center}
+    #lesson .top,#lesson .qwrap{width:100%;max-width:660px}
+    .qleft{text-align:center;margin-top:8px}
+    .qleft .speak{justify-content:center;gap:16px}
+    .qleft .spk-btn{width:72px;height:72px;font-size:32px}
+    .qleft .zh{font-size:28px}
+    .qemoji{font-size:56px;margin-bottom:10px}
+    .answer{min-height:110px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 學習 -->
+  <section id="learn" class="screen on"></section>
+
+  <!-- 進度 -->
+  <section id="progress" class="screen"></section>
+
+  <!-- 錯題本 -->
+  <section id="mistakes" class="screen"></section>
+
+  <!-- 課程 -->
+  <section id="lesson" class="screen">
+    <div class="top">
+      <button class="x" onclick="quit()">✕</button>
+      <div class="bar"><i id="pbar"></i></div>
+      <div class="hearts" id="hearts">❤ <span id="hp">5</span></div>
+    </div>
+    <div class="qwrap">
+      <div class="qhint"><span id="qtag">把中文翻成英文</span>
+        <span class="lchip" id="lchip" onclick="toggleListen()">👂 聽力</span></div>
+      <div class="qleft">
+        <div class="qemoji" id="qemoji"></div>
+        <div class="speak"><button class="spk-btn" onclick="speakCur()">🔊</button>
+          <div class="zh" id="zh"></div></div>
+      </div>
+      <div class="qright">
+        <div class="answer" id="answer"></div>
+        <div class="bank" id="bank"></div>
+        <div class="check">
+          <button class="btn hint" id="hintBtn" onclick="hint()">💡 提示</button>
+          <button class="btn" id="checkBtn" onclick="check()" disabled>檢查</button>
+        </div>
+      </div>
+    </div>
+    <div class="sheet" id="sheet">
+      <div class="hd" id="sheetHd"></div>
+      <div class="sol" id="sheetSol"></div>
+      <button class="btn go" onclick="nextQ()">繼續</button>
+    </div>
+  </section>
+
+  <!-- 完成 -->
+  <section id="done" class="screen">
+    <div class="big" id="doneEmoji">🎉</div>
+    <h2 id="doneTitle">完成！</h2>
+    <div class="stat">
+      <div><b id="dXp">0</b><small>經驗值</small></div>
+      <div><b id="dAcc">0%</b><small>正確率</small></div>
+    </div>
+    <button class="btn go" style="max-width:260px" onclick="quit()">返回</button>
+  </section>
+
+  <!-- 愛心用完彈窗 -->
+  <div id="modal" class="modal-wrap"><div class="modal">
+    <div class="m-emoji">💛</div>
+    <div class="m-title">愛心用完了！</div>
+    <div class="m-msg">沒關係，休息一下～<br>要補滿愛心繼續，還是先離開？</div>
+    <button class="btn go" onclick="modalContinue()">補滿愛心，繼續 ❤❤❤</button>
+    <button class="btn" style="margin-top:10px;background:#eee;color:#777;border-bottom-color:#dcdcdc" onclick="modalQuit()">離開本關</button>
+  </div></div>
+
+  <!-- 底部分頁 -->
+  <nav id="nav">
+    <button id="navLearn" class="act" onclick="showTab('learn')"><span class="ni">🧩</span>學習</button>
+    <button id="navProg" onclick="showTab('progress')"><span class="ni">📊</span>進度</button>
+    <button id="navMist" class="badge" data-n="0" onclick="showTab('mistakes')"><span class="ni">📕</span>錯題本</button>
+  </nav>
+</div>
+
+<script>
+const STAGES = /*DATA*/[];
+const $=s=>document.querySelector(s);
+// 資料版本旗標：關卡結構變動(如插入國小關)時，清除舊的位置式進度避免錯位
+const DATAVER="2026-elem7";
+if(localStorage.getItem("pinjuVer")!==DATAVER){["pinju2","pinjuStat","pinjuMist"].forEach(k=>localStorage.removeItem(k));localStorage.setItem("pinjuVer",DATAVER);}
+
+/* ===== 儲存 ===== */
+const PROG=JSON.parse(localStorage.getItem("pinju2")||"{}");           // {key:{stars,xp}}
+const STAT=Object.assign({answered:0,correct:0,streak:0,lastDay:"",days:{}},JSON.parse(localStorage.getItem("pinjuStat")||"{}"));
+const MIST=JSON.parse(localStorage.getItem("pinjuMist")||"{}");        // {qid:{zh,t,d,cat,unit,box,wrong}}
+const SET=Object.assign({listen:false},JSON.parse(localStorage.getItem("pinjuSet")||"{}"));
+const saveP=()=>localStorage.setItem("pinju2",JSON.stringify(PROG));
+const saveS=()=>localStorage.setItem("pinjuStat",JSON.stringify(STAT));
+const saveM=()=>localStorage.setItem("pinjuMist",JSON.stringify(MIST));
+const saveSet=()=>localStorage.setItem("pinjuSet",JSON.stringify(SET));
+
+/* 攤平單元順序 */
+let flat=[];
+STAGES.forEach((s,si)=>s.units.forEach((u,ui)=>flat.push({si,ui,key:"s"+si+"u"+ui,unit:u})));
+const uKey=(si,ui)=>"s"+si+"u"+ui;
+const unitDone=(si,ui)=>!!PROG[uKey(si,ui)];
+const unitOpen=(si,ui)=>ui===0||unitDone(si,ui-1);
+const stageUnitsDone=si=>STAGES[si].units.filter((u,ui)=>unitDone(si,ui)).length;
+const stageAllDone=si=>stageUnitsDone(si)===STAGES[si].units.length;
+const stageOpen=si=>si===0||stageAllDone(si-1)||stageUnitsDone(si)>0;
+function activeMist(){return Object.keys(MIST).filter(k=>MIST[k].box<6);}
+
+/* ===== 分頁 ===== */
+function showTab(t){
+  ["learn","progress","mistakes","lesson","done"].forEach(s=>$("#"+s).classList.toggle("on",s===t));
+  $("#nav").classList.remove("hide");
+  $("#navLearn").classList.toggle("act",t==="learn");
+  $("#navProg").classList.toggle("act",t==="progress");
+  $("#navMist").classList.toggle("act",t==="mistakes");
+  if(t==="learn")renderLearn();
+  if(t==="progress")renderProgress();
+  if(t==="mistakes")renderMist();
+}
+function refreshBadge(){$("#navMist").setAttribute("data-n",activeMist().length);}
+
+/* ===== 學習：關卡卡片 / 單元路徑 ===== */
+let curStage=null;
+function renderLearn(){
+  refreshBadge();
+  const L=$("#learn");
+  if(curStage===null){
+    let star=0,xp=0;Object.values(PROG).forEach(p=>{star+=p.stars;xp+=p.xp||0;});
+    let h=`<div class="hero"><h1>🧩 英語拼句</h1><p>國小 → 國中 · 依教育部課綱設計</p>
+      <div class="stats"><div class="st"><b>🔥 ${STAT.streak}</b><small>連續天數</small></div>
+        <div class="st"><b>⭐ ${star}</b><small>星星</small></div>
+        <div class="st"><b>🏅 ${xp}</b><small>XP</small></div></div></div><div class="pad" style="padding-top:8px">`;
+    const curIdx=STAGES.findIndex((st,i)=>stageOpen(i)&&stageUnitsDone(i)<st.units.length);
+    STAGES.forEach((s,si)=>{
+      const tot=s.units.length,done=stageUnitsDone(si),pc=Math.round(done/tot*100);
+      const lock=!stageOpen(si), cur=si===curIdx;
+      h+=`<div class="card${lock?' lockcard':''}${cur?' cur':''}" style="--c:${s.color};--p:${pc}%" ${lock?'':`onclick="openStage(${si})"`}>
+        <div class="ring"><i>${lock?'🔒':s.icon}</i></div>
+        <div class="info"><b>第 ${si+1} 關 · ${s.title}</b>
+          <small>${s.grade} · ${tot} 單元 · 完成 ${done}/${tot}</small></div>
+        <div class="arw">${lock?'':'›'}</div></div>`;
+    });
+    h+=`</div>`;
+    L.innerHTML=h;
+  }else{
+    const s=STAGES[curStage];
+    let h=`<div class="backbar"><button onclick="closeStage()">‹</button>
+      <span style="color:${s.color}">${s.icon} ${s.title}</span></div><div class="path">`;
+    s.units.forEach((u,ui)=>{
+      const open=unitOpen(curStage,ui),p=PROG[uKey(curStage,ui)];
+      const cur=open&&!p;
+      let st;
+      if(p)st=`<span class="st-star">${"★".repeat(p.stars)}${"☆".repeat(3-p.stars)}</span>`;
+      else if(open)st=`<span class="st-go">開始</span>`;
+      else st=`<span class="st-lock">🔒</span>`;
+      h+=`<div class="unode ${open?'open':'lock'} ${cur?'cur':''}" style="--c:${s.color}" ${open?`onclick="startUnit(${curStage},${ui})"`:''}>
+        <div class="udot">${open?u.icon:'🔒'}</div>
+        <div class="ulab"><b>${u.name}</b><small>${u.qs.length} 題 · ${u.cat}</small></div>
+        <div class="ust">${st}</div></div>`;
+    });
+    const all=stageAllDone(curStage);
+    h+=`<div class="unode ${all?'open cur':'lock'}" style="--c:#ff9f43" ${all?`onclick="startReviewStage(${curStage})"`:''}>
+      <div class="udot">${all?'🎲':'🔒'}</div>
+      <div class="ulab"><b>綜合複習</b><small>${all?'混合本關全部句型 · 隨機 15 題':'完成所有單元後解鎖'}</small></div>
+      <div class="ust">${all?'<span class="st-go">挑戰</span>':'<span class="st-lock">🔒</span>'}</div></div>`;
+    h+=`</div>`;
+    L.innerHTML=h;
+  }
+}
+function openStage(si){curStage=si;renderLearn();}
+function closeStage(){curStage=null;renderLearn();}
+
+/* ===== 進度總攬 ===== */
+function renderProgress(){
+  const totU=flat.length, doneU=flat.filter(f=>PROG[f.key]).length;
+  const pc=Math.round(doneU/totU*100);
+  let star=0,xp=0; Object.values(PROG).forEach(p=>{star+=p.stars;xp+=p.xp||0;});
+  const acc=STAT.answered?Math.round(STAT.correct/STAT.answered*100):0;
+  let h=`<div class="hdr"><h1>📊 我的進度</h1></div><div class="pad">
+    <div class="big-ring" style="--p:${pc}%"><i><b>${pc}%</b><small>總完成度</small></i></div>
+    <div class="kpis">
+      <div class="kpi"><b>🔥 ${STAT.streak}</b><small>連續天數</small></div>
+      <div class="kpi"><b>⭐ ${star}</b><small>星星</small></div>
+      <div class="kpi"><b>🏅 ${xp}</b><small>XP</small></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b>${STAT.answered}</b><small>累積作答</small></div>
+      <div class="kpi"><b>${acc}%</b><small>正確率</small></div>
+      <div class="kpi"><b>${activeMist().length}</b><small>待複習錯題</small></div>
+    </div>
+    <div class="sec-t">各關完成度</div>`;
+  STAGES.forEach((s,si)=>{
+    const tot=s.units.length,done=stageUnitsDone(si),p=Math.round(done/tot*100);
+    h+=`<div class="prow"><div class="pr-top"><span class="nm">${s.icon} ${s.title}</span>
+      <span class="pc">${done}/${tot}</span></div>
+      <div class="tb"><i style="width:${p}%;background:${s.color}"></i></div></div>`;
+  });
+  h+=`</div>`;
+  $("#progress").innerHTML=h;
+}
+
+/* ===== 錯題本 ===== */
+function renderMist(){
+  const keys=activeMist();
+  let h=`<div class="hdr"><h1>📕 錯題本</h1></div><div class="pad">`;
+  if(!keys.length){
+    h+=`<div class="empty">🎉 目前沒有待複習的錯題！<br>答錯的題目會自動收進這裡，<br>連續答對幾次就會「畢業」移除。</div>`;
+  }else{
+    h+=`<div class="mist-hero"><div class="n">${keys.length}</div><div style="color:var(--gray-d)">題待複習</div></div>
+      <button class="btn go" style="margin:10px 0 18px" onclick="startReviewMist()">開始複習錯題</button>`;
+    keys.sort((a,b)=>MIST[a].box-MIST[b].box).forEach(k=>{
+      const m=MIST[k];
+      h+=`<div class="mi"><span class="box">第${m.box}盒</span>
+        <div class="zh">${m.zh}</div><div class="en">${pretty(m.t)}</div></div>`;
+    });
+  }
+  h+=`</div>`;
+  $("#mistakes").innerHTML=h;
+}
+
+/* ===== 課程流程 ===== */
+let mode="unit", qList=[], qIdx=0, origLen=0, hp=5, correct=0, xp=0, answer=[], curKeyInfo=null, badIdx=-1;
+
+function startUnit(si,ui){
+  mode="unit"; curKeyInfo={si,ui,key:uKey(si,ui),unit:STAGES[si].units[ui]};
+  qList=STAGES[si].units[ui].qs.map((q,i)=>tagQ(q,uKey(si,ui),i,STAGES[si].units[ui].name,STAGES[si].units[ui].cat));
+  beginLesson();
+}
+function startReviewStage(si){
+  mode="review";
+  let pool=[];
+  STAGES[si].units.forEach((u,ui)=>u.qs.forEach((q,i)=>pool.push(tagQ(q,uKey(si,ui),i,u.name,u.cat))));
+  shuffle(pool); qList=pool.slice(0,15);
+  beginLesson();
+}
+function startReviewMist(){
+  mode="review";
+  const keys=activeMist();
+  keys.sort((a,b)=>MIST[a].box-MIST[b].box);
+  qList=keys.slice(0,20).map(k=>{const m=MIST[k];return {_qid:k,zh:m.zh,t:m.t,d:m.d,cat:m.cat,unit:m.unit};});
+  if(!qList.length){showTab("mistakes");return;}
+  beginLesson();
+}
+function tagQ(q,key,i,unit,cat){return {_qid:key+"#"+i,zh:q.zh,t:q.t,d:q.d||[],cat:cat,unit:unit};}
+
+function beginLesson(){
+  qIdx=0; origLen=qList.length; hp=5; correct=0; xp=0;
+  $("#hearts").style.visibility = mode==="review"?"hidden":"visible";
+  $("#qtag").textContent = mode==="review"?"複習模式":"把中文翻成英文";
+  $("#lchip").classList.toggle("on",SET.listen);
+  ["learn","progress","mistakes","done"].forEach(s=>$("#"+s).classList.remove("on"));
+  $("#lesson").classList.add("on"); $("#nav").classList.add("hide");
+  loadQ();
+}
+function loadQ(){
+  const q=qList[qIdx]; answer=[]; badIdx=-1;
+  q._tiles=shuffle([...q.t,...q.d].map((w,k)=>({w,id:k,taken:false})));
+  applyListen(q); setQEmoji(q);
+  $("#pbar").style.width=Math.min(qIdx/origLen*100,100)+"%";
+  $("#hp").textContent=hp;
+  $("#sheet").className="sheet";
+  draw(); setTimeout(speakCur,350);
+}
+function applyListen(q){
+  if(SET.listen){$("#zh").textContent="🎧 聽音檔，拼出英文句子";$("#zh").style.color="var(--gray-d)";}
+  else{$("#zh").textContent=q.zh;$("#zh").style.color="";}
+}
+function draw(){
+  const q=qList[qIdx],A=$("#answer"),B=$("#bank");A.innerHTML="";B.innerHTML="";
+  answer.forEach((o,i)=>{const t=tile(o,()=>move(o,false));if(i===badIdx)t.classList.add("bad");A.appendChild(t);});
+  q._tiles.forEach(o=>{
+    if(o.taken){const hl=document.createElement("div");hl.className="tile hole";hl.textContent=o.w;B.appendChild(hl);return;}
+    B.appendChild(tile(o,()=>move(o,true)));
+  });
+  const btn=$("#checkBtn"),ok=answer.length>0;btn.disabled=!ok;btn.classList.toggle("go",ok);
+}
+function tile(o,onTap){
+  const d=document.createElement("div");
+  d.className="tile"+(/^[.?!,]$/.test(o.w)?" punc":"");d.textContent=o.w;
+  let lp,fired=false;
+  d.addEventListener("pointerdown",()=>{fired=false;lp=setTimeout(()=>{fired=true;speakWord(o.w);},450);});
+  const cx=()=>clearTimeout(lp);
+  d.addEventListener("pointerup",cx);d.addEventListener("pointercancel",cx);d.addEventListener("pointerleave",cx);
+  d.addEventListener("click",()=>{if(fired){fired=false;return;}onTap();});
+  return d;
+}
+function move(o,toAns){
+  badIdx=-1;
+  if(toAns){o.taken=true;answer.push(o);}else{o.taken=false;answer=answer.filter(x=>x!==o);}
+  draw();
+}
+function check(){
+  const q=qList[qIdx];
+  const user=answer.map(o=>o.w).join(" ");
+  const accepts=[q.t.join(" ")].concat(q.accept||[]);   // 支援多組正解
+  const ok=accepts.includes(user);
+  record(q,ok);
+  const s=$("#sheet");
+  if(ok){
+    correct++;xp+=10; playSound(true);
+    s.className="sheet ok show";
+    $("#sheetHd").innerHTML="✅ 答對了！ +10 XP";
+    $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>`;
+    speakCur();
+  }else{
+    playSound(false);
+    if(mode!=="review"){hp--;$("#hp").textContent=hp;}
+    // 標出第一個排錯的位置
+    badIdx=-1;
+    for(let i=0;i<Math.max(answer.length,q.t.length);i++){
+      if((answer[i]&&answer[i].w||"")!==(q.t[i]||"")){badIdx=i;break;}
+    }
+    draw();
+    $("#answer").classList.add("shake");setTimeout(()=>$("#answer").classList.remove("shake"),350);
+    s.className="sheet no show";
+    $("#sheetHd").innerHTML="❌ 正確答案是";
+    const tip=badIdx>=0?`<div style="color:var(--red);font-size:12.5px;margin-top:5px">💡 第 ${badIdx+1} 個位置開始不對，紅色框就是要改的地方</div>`:"";
+    $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>${tip}`;
+    if(mode!=="review")qList.push(q);          // 一般模式：答錯重排到尾端
+    if(mode!=="review"&&hp<=0){setTimeout(showHeartsModal,550);}
+  }
+}
+function record(q,ok){
+  STAT.answered++; if(ok)STAT.correct++;
+  const M=MIST[q._qid];
+  if(!ok){
+    MIST[q._qid]={zh:q.zh,t:q.t,d:q.d,cat:q.cat,unit:q.unit,box:1,wrong:(M?M.wrong:0)+1};
+  }else if(M){
+    M.box++; if(M.box>=6)delete MIST[q._qid];   // 連續答對畢業
+  }
+  saveM();
+}
+function nextQ(){
+  $("#sheet").className="sheet";qIdx++;
+  if(qIdx>=qList.length){finish();return;}
+  loadQ();
+}
+function localDay(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function markStreak(){
+  const d=new Date(),today=localDay(d);   // 用本地日期，避免凌晨(UTC)誤算連續天數
+  if(STAT.lastDay!==today){
+    const y=localDay(new Date(d.getTime()-864e5));
+    STAT.streak = STAT.lastDay===y ? STAT.streak+1 : 1;
+    STAT.lastDay=today;
+  }
+  STAT.days[today]=(STAT.days[today]||0)+correct;
+  saveS();
+}
+function finish(){
+  const total=qIdx, acc=Math.round(correct/total*100);
+  markStreak();
+  if(mode==="unit"){
+    const stars=acc>=90?3:acc>=70?2:1, k=curKeyInfo.key;
+    const prev=PROG[k]?.stars||0, pxp=PROG[k]?.xp||0;
+    PROG[k]={stars:Math.max(prev,stars),xp:Math.max(pxp,xp)};
+    saveP();
+    $("#doneTitle").textContent="單元完成！";
+    $("#doneEmoji").textContent=acc>=90?"🏆":acc>=70?"🎉":"💪";
+  }else{
+    $("#doneTitle").textContent="複習完成！";
+    $("#doneEmoji").textContent="🎯";
+  }
+  $("#dXp").textContent=xp;$("#dAcc").textContent=acc+"%";
+  ["learn","progress","mistakes","lesson"].forEach(s=>$("#"+s).classList.remove("on"));
+  $("#done").classList.add("on"); $("#nav").classList.add("hide");
+}
+function quit(){try{speechSynthesis.cancel();}catch(e){} curStage=curKeyInfo?curKeyInfo.si:curStage; showTab("learn");}
+
+/* ===== 聽力切換 ===== */
+function toggleListen(){SET.listen=!SET.listen;saveSet();$("#lchip").classList.toggle("on",SET.listen);applyListen(qList[qIdx]);}
+
+/* ===== 發音 + 音效 ===== */
+function speakCur(){
+  if(!window.speechSynthesis)return;
+  const q=qList[qIdx];const txt=pretty(q.t).replace(/[?.!]/g,"");
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u);
+}
+let AC=null;
+function playSound(ok){
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+    const seq=ok?[[660,0],[880,.1]]:[[200,0]];
+    seq.forEach(([f,t])=>{const o=AC.createOscillator(),g=AC.createGain();
+      o.frequency.value=f;o.type=ok?"sine":"square";o.connect(g);g.connect(AC.destination);
+      const s=AC.currentTime+t;g.gain.setValueAtTime(.001,s);g.gain.exponentialRampToValueAtTime(.25,s+.02);
+      g.gain.exponentialRampToValueAtTime(.001,s+(ok?.18:.3));o.start(s);o.stop(s+(ok?.2:.32));});
+  }catch(e){}
+}
+
+/* ===== utils ===== */
+function pretty(t){return t.join(" ").replace(/\s+([?.!,])/g,"$1");}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ===== emoji 圖示輔助 ===== */
+const EMOJI={dog:"🐶",dogs:"🐶",cat:"🐱",cats:"🐱",bird:"🐦",birds:"🐦",fish:"🐟",elephant:"🐘",
+ apple:"🍎",apples:"🍎",banana:"🍌",orange:"🍊",egg:"🥚",milk:"🥛",water:"💧",tea:"🍵",rice:"🍚",
+ cookie:"🍪",cake:"🍰",lunch:"🍱",dinner:"🍽️",breakfast:"🍳",book:"📖",books:"📖",pen:"🖊️",pens:"🖊️",
+ pencil:"✏️",pencils:"✏️",bag:"🎒",desk:"🪑",ball:"⚽",car:"🚗",bus:"🚌",bike:"🚲",train:"🚆",
+ house:"🏠",home:"🏠",school:"🏫",park:"🏞️",store:"🏪",shop:"🏪",shops:"🏪",bank:"🏦",tree:"🌳",
+ flower:"🌸",flowers:"🌸",sun:"☀️",sunny:"☀️",rain:"🌧️",rainy:"🌧️",cold:"🥶",hat:"🎩",dress:"👗",
+ sister:"👧",brother:"👦",mother:"👩",mom:"👩",father:"👨",dad:"👨",teacher:"🧑‍🏫",student:"🧑‍🎓",
+ friend:"🧑‍🤝‍🧑",friends:"🧑‍🤝‍🧑",doctor:"🧑‍⚕️",nurse:"👩‍⚕️",swim:"🏊",run:"🏃",sing:"🎤",dance:"💃",
+ jump:"🤸",sleep:"😴",read:"📖",play:"🎮",happy:"😊",sad:"😢",tired:"😫",dollars:"💵",money:"💰",
+ red:"🔴",blue:"🔵",green:"🟢",yellow:"🟡",black:"⚫",white:"⚪",star:"⭐",stars:"⭐"};
+function setQEmoji(q){
+  const el=$("#qemoji");
+  if(SET.listen){el.textContent="";return;}
+  let found="";
+  for(const w of q.t){const k=w.toLowerCase().replace(/[^a-z']/g,"");if(EMOJI[k]){found=EMOJI[k];break;}}
+  el.textContent=found;
+}
+/* ===== 單字發音（長按詞塊）===== */
+function speakWord(w){
+  if(!window.speechSynthesis||/^[.?!,]$/.test(w))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(w);u.lang="en-US";u.rate=.75;speechSynthesis.speak(u);
+}
+/* ===== 提示：自動填入下一個正確詞塊 ===== */
+function hint(){
+  const q=qList[qIdx];
+  const need=q.t[answer.length];
+  if(need===undefined)return;
+  const o=q._tiles.find(x=>!x.taken&&x.w===need);
+  if(o)move(o,true);
+}
+/* ===== 愛心用完彈窗 ===== */
+function showHeartsModal(){$("#modal").classList.add("show");}
+function modalContinue(){hp=5;$("#hp").textContent=hp;$("#modal").classList.remove("show");$("#sheet").className="sheet";nextQ();}
+function modalQuit(){$("#modal").classList.remove("show");quit();}
+
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+renderLearn();
+</script>
+</body>
+</html>

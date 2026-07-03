@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1f8fd6"/>
+  <text x="256" y="208" font-family="Arial,sans-serif" font-weight="800" font-size="205" fill="#fff" text-anchor="middle" dominant-baseline="central">ABC</text>
+  <rect x="121" y="318" width="270" height="132" rx="66" fill="#fff"/>
+  <text x="256" y="388" font-family="'Microsoft JhengHei','PingFang TC',sans-serif" font-weight="800" font-size="96" fill="#1f8fd6" text-anchor="middle" dominant-baseline="central">拼句</text>
+</svg>
