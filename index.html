@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="英語拼句">
-<title>英語拼句 · 國中文法</title>
+<meta name="apple-mobile-web-app-title" content="國中英語句型">
+<title>國中英語句型</title>
 <style>
   :root{
     --green:#58cc02; --green-d:#4caf00; --green-l:#d7ffb8;
@@ -218,6 +218,12 @@
     .qemoji{font-size:56px;margin-bottom:10px}
     .answer{min-height:110px}
   }
+  #installBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom));z-index:50;width:calc(100% - 24px);max-width:440px}
+  #installBar:empty{display:none}
+  #installBar .install-btn{display:block;width:100%;border:0;border-radius:14px;padding:13px 15px;font-size:15px;font-weight:800;cursor:pointer;background:#1f8fd6;color:#fff;box-shadow:0 8px 20px rgba(31,143,214,.4)}
+  #installBar .install-btn.sec{background:#eef6fd;color:#1f8fd6}
+  #installBar .install-tip{background:#fff7e6;border:1px solid #ffe0a3;border-radius:14px;padding:13px;font-size:13px;line-height:1.85;color:#5a4a1a}
+  #installBar .install-x{display:inline-block;margin-top:6px;color:#1f8fd6;font-weight:800;cursor:pointer}
 </style>
 </head>
 <body>
@@ -283,6 +289,8 @@
     <button class="btn" style="margin-top:10px;background:#eee;color:#777;border-bottom-color:#dcdcdc" onclick="modalQuit()">離開本關</button>
   </div></div>
 
+  <div id="installBar"></div>
+
   <!-- 底部分頁 -->
   <nav id="nav">
     <button id="navLearn" class="act" onclick="showTab('learn')"><span class="ni">🧩</span>學習</button>
@@ -329,6 +337,7 @@ function showTab(t){
   if(t==="learn")renderLearn();
   if(t==="progress")renderProgress();
   if(t==="mistakes")renderMist();
+  renderInstallBar();
 }
 function refreshBadge(){$("#navMist").setAttribute("data-n",activeMist().length);}
 
@@ -339,7 +348,7 @@ function renderLearn(){
   const L=$("#learn");
   if(curStage===null){
     let star=0,xp=0;Object.values(PROG).forEach(p=>{star+=p.stars;xp+=p.xp||0;});
-    let h=`<div class="hero"><h1>🧩 英語拼句</h1><p>國小 → 國中 · 依教育部課綱設計</p>
+    let h=`<div class="hero"><h1>🧩 國中英語句型</h1><p>國小 → 國中 · 依教育部課綱設計</p>
       <div class="stats"><div class="st"><b>🔥 ${STAT.streak}</b><small>連續天數</small></div>
         <div class="st"><b>⭐ ${star}</b><small>星星</small></div>
         <div class="st"><b>🏅 ${xp}</b><small>XP</small></div></div></div><div class="pad" style="padding-top:8px">`;
@@ -644,6 +653,22 @@ function modalQuit(){$("#modal").classList.remove("show");quit();}
 
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 renderLearn();
+
+/* ===== 安裝到桌面 (PWA) ===== */
+let deferredPrompt=null;
+function isStandalone(){return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+function isIOSDevice(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstallBar();});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;renderInstallBar();});
+function renderInstallBar(){var el=document.getElementById("installBar");if(!el)return;
+  var learn=document.getElementById("learn"),onLearn=learn&&learn.classList.contains("on");
+  if(isStandalone()||!onLearn){el.innerHTML="";return;}
+  if(deferredPrompt){el.innerHTML='<button class="install-btn" onclick="doInstall()">📲 安裝到桌面（免開瀏覽器） ➕</button>';}
+  else if(isIOSDevice()){el.innerHTML='<button class="install-btn sec" onclick="showIOSInstall()">📲 安裝到主畫面（iPad / iPhone） ›</button>';}
+  else{el.innerHTML="";}}
+function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.finally(function(){deferredPrompt=null;renderInstallBar();});}
+function showIOSInstall(){var el=document.getElementById("installBar");if(!el)return;el.innerHTML='<div class="install-tip">📲 <b>加到 iPad / iPhone 桌面：</b><br>1. 用 <b>Safari</b> 開啟本頁<br>2. 點「分享 ⬆️」<br>3. 往下找「<b>加入主畫面 ➕</b>」<br>4. 右上按「新增」完成<br><span class="install-x" onclick="renderInstallBar()">知道了 ✓</span></div>';}
+renderInstallBar();
 </script>
 </body>
 </html>
