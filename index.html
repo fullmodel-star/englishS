@@ -317,6 +317,10 @@ const SET=Object.assign({listen:false},JSON.parse(localStorage.getItem("pinjuSet
 const saveP=()=>localStorage.setItem("pinju2",JSON.stringify(PROG));
 const saveS=()=>localStorage.setItem("pinjuStat",JSON.stringify(STAT));
 const saveM=()=>localStorage.setItem("pinjuMist",JSON.stringify(MIST));
+/* ===== 忍者修行：跨App共用經驗值錢包(同網域，灌進火影修行計畫) ===== */
+window.Ninja=window.Ninja||(function(){var K='ninja_xp_v1';function L(){try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}}function G(){var w=L();w.xp=w.xp||0;w.bySrc=w.bySrc||{};w.correct=w.correct||0;w.units=w.units||0;w.jutsu=w.jutsu||[];w.seen=w.seen||{};return w}function P(w){w.ts=Date.now();try{localStorage.setItem(K,JSON.stringify(w))}catch(e){}}return{get:G,gain:function(n,a,o){o=o||{};var w=G();w.xp+=n;w.bySrc[a]=(w.bySrc[a]||0)+n;w.correct+=(o.correct||0);w.units+=(o.unit||0);P(w);return w},backfill:function(a,x,o){var w=G();if(w.seen[a])return w;o=o||{};w.xp+=x;w.bySrc[a]=(w.bySrc[a]||0)+x;w.correct+=(o.correct||0);w.units+=(o.unit||0);w.seen[a]=1;P(w);return w}}})();
+/* 舊經驗遷移：拼句既有 XP 一次性灌入錢包 */
+(function(){try{var xp=0;Object.values(PROG).forEach(function(p){xp+=(p.xp||0);});Ninja.backfill('pinju',xp,{correct:STAT.correct||0});}catch(e){}})();
 const saveSet=()=>localStorage.setItem("pinjuSet",JSON.stringify(SET));
 
 /* 攤平單元順序 */
@@ -531,6 +535,7 @@ function check(){
       speakCur();
     }else{
       correct++;xp+=10;
+      Ninja.gain(10,'pinju',{correct:1});   // 真的答對→灌進火影修行經驗
       s.className="sheet ok show";
       $("#sheetHd").innerHTML="✅ 答對了！ +10 XP";
       $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>`;
