@@ -143,6 +143,9 @@
   .tile:active{transform:translateY(2px)}
   .tile.hole{background:var(--gray);border-color:var(--gray);color:transparent;pointer-events:none}
   .tile.punc{color:var(--gray-d)}
+  .tile.glow{border-color:#e69500;background:#fff7e6;color:#b36b00;animation:glowpulse .6s ease-in-out 4}
+  @keyframes glowpulse{0%,100%{box-shadow:0 0 0 0 rgba(230,149,0,.0);transform:none}
+    50%{box-shadow:0 0 0 6px rgba(230,149,0,.28);transform:translateY(-2px)}}
   .check{margin-top:auto;padding-top:16px}
   .btn{width:100%;padding:15px;border:none;border-radius:16px;font-size:17px;font-weight:800;cursor:pointer;
     color:#fff;background:var(--gray-d);border-bottom:5px solid rgba(0,0,0,.18)}
@@ -441,7 +444,7 @@ function renderMist(){
 }
 
 /* ===== 課程流程 ===== */
-let mode="unit", qList=[], qIdx=0, origLen=0, hp=5, correct=0, xp=0, answer=[], curKeyInfo=null, badIdx=-1;
+let mode="unit", qList=[], qIdx=0, origLen=0, hp=5, correct=0, xp=0, answer=[], curKeyInfo=null, badIdx=-1, qHinted=false;
 
 function startUnit(si,ui){
   mode="unit"; curKeyInfo={si,ui,key:uKey(si,ui),unit:STAGES[si].units[ui]};
@@ -475,7 +478,7 @@ function beginLesson(){
   loadQ();
 }
 function loadQ(){
-  const q=qList[qIdx]; answer=[]; badIdx=-1;
+  const q=qList[qIdx]; answer=[]; badIdx=-1; qHinted=false; updateHintBtn();
   q._tiles=shuffle([...q.t,...q.d].map((w,k)=>({w,id:k,taken:false})));
   applyListen(q); setQEmoji(q);
   $("#pbar").style.width=Math.min(qIdx/origLen*100,100)+"%";
@@ -498,7 +501,7 @@ function draw(){
 }
 function tile(o,onTap){
   const d=document.createElement("div");
-  d.className="tile"+(/^[.?!,]$/.test(o.w)?" punc":"");d.textContent=o.w;
+  d.className="tile"+(/^[.?!,]$/.test(o.w)?" punc":"");d.textContent=o.w;d.dataset.tid=o.id;
   let lp,fired=false;
   d.addEventListener("pointerdown",()=>{fired=false;lp=setTimeout(()=>{fired=true;speakWord(o.w);},450);});
   const cx=()=>clearTimeout(lp);
@@ -516,14 +519,23 @@ function check(){
   const user=answer.map(o=>o.w).join(" ");
   const accepts=[q.t.join(" ")].concat(q.accept||[]);   // 支援多組正解
   const ok=accepts.includes(user);
-  record(q,ok);
+  record(q,ok,qHinted);
   const s=$("#sheet");
   if(ok){
-    correct++;xp+=10; playSound(true);
-    s.className="sheet ok show";
-    $("#sheetHd").innerHTML="✅ 答對了！ +10 XP";
-    $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>`;
-    speakCur();
+    playSound(true);
+    if(qHinted){
+      xp+=3;
+      s.className="sheet ok show";
+      $("#sheetHd").innerHTML="✅ 完成（靠提示）· +3 XP";
+      $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b><div style="color:var(--gray-d);font-size:12px;margin-top:5px;line-height:1.5">💡 這題有用提示，先收進錯題本；之後自己拼對一次才算真的學會囉！</div>`;
+      speakCur();
+    }else{
+      correct++;xp+=10;
+      s.className="sheet ok show";
+      $("#sheetHd").innerHTML="✅ 答對了！ +10 XP";
+      $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>`;
+      speakCur();
+    }
   }else{
     playSound(false);
     if(mode!=="review"){hp--;$("#hp").textContent=hp;}
@@ -542,13 +554,13 @@ function check(){
     if(mode!=="review"&&hp<=0){setTimeout(showHeartsModal,550);}
   }
 }
-function record(q,ok){
-  STAT.answered++; if(ok)STAT.correct++;
+function record(q,ok,hinted){
+  STAT.answered++; if(ok&&!hinted)STAT.correct++;   // 靠提示不計正確率
   const M=MIST[q._qid];
-  if(!ok){
-    MIST[q._qid]={zh:q.zh,t:q.t,d:q.d,cat:q.cat,unit:q.unit,box:1,wrong:(M?M.wrong:0)+1};
+  if(!ok||hinted){                                   // 答錯 或 靠提示 → 進錯題本、之後再自己練
+    MIST[q._qid]={zh:q.zh,t:q.t,d:q.d,cat:q.cat,unit:q.unit,box:1,wrong:(M?M.wrong:0)+(ok?0:1)};
   }else if(M){
-    M.box++; if(M.box>=6)delete MIST[q._qid];   // 連續答對畢業
+    M.box++; if(M.box>=6)delete MIST[q._qid];         // 連續(自己)答對畢業
   }
   saveM();
 }
@@ -638,13 +650,28 @@ function speakWord(w){
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(w);u.lang="en-US";u.rate=.75;speechSynthesis.speak(u);
 }
-/* ===== 提示：自動填入下一個正確詞塊 ===== */
+/* ===== 提示：高亮下一個正確詞塊（不代填），每題限1次，用了這題不計正確率 ===== */
 function hint(){
+  if(qHinted)return;                       // 每題限1次
   const q=qList[qIdx];
   const need=q.t[answer.length];
   if(need===undefined)return;
   const o=q._tiles.find(x=>!x.taken&&x.w===need);
-  if(o)move(o,true);
+  if(!o)return;
+  qHinted=true; updateHintBtn();
+  glowTile(o.id);                          // 只閃給你看，還是要自己點
+}
+function glowTile(tid){
+  const el=document.querySelector('#bank [data-tid="'+tid+'"]');
+  if(!el)return;
+  el.classList.add("glow");
+  el.scrollIntoView({block:"nearest",behavior:"smooth"});
+  setTimeout(()=>{el&&el.classList.remove("glow");},2600);
+}
+function updateHintBtn(){
+  const b=$("#hintBtn"); if(!b)return;
+  b.disabled=qHinted;
+  b.innerHTML=qHinted?"💡 已用提示":"💡 提示";
 }
 /* ===== 愛心用完彈窗 ===== */
 function showHeartsModal(){$("#modal").classList.add("show");}
