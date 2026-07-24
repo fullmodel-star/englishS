@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, ">
+<meta name="theme-color" content="#F0E9F4">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="ridgeline-ui.css">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="國中英語句型">
+<title>國中英語句型</title>
+<style>
+  :root{
+    /* 語意狀態色保留：正解綠 / 答錯紅 / 錯位金 */
+    --green:#58cc02; --green-d:#4caf00; --green-l:#d7ffb8;
+    --blue:#5bc0eb; --red:#ff6b81; --gold:#ffb703;
+    /* 稜線識別 · theme-plum（梅紫）：品牌色改梅紫，紙背＋岩藍墨 */
+    --brand:#7A4E8C; --brand-d:#653F75;
+    --ink:#141E2B; --gray:#E4DDCE; --gray-d:#6E8BA3; --bg:#fff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:#F7F3EC;
+    display:flex;flex-direction:column;align-items:center;overflow:hidden;user-select:none;
+  }
+  #app{width:100%;max-width:520px;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .screen{flex:1;overflow-y:auto;display:none;flex-direction:column}
+  .screen.on{display:flex}
+  .pad{padding:16px 18px 24px}
+  .hdr{text-align:center;padding:20px 18px 6px}
+  .hdr h1{font-size:24px;margin:0;color:var(--brand);letter-spacing:.5px}
+  .hdr p{margin:5px 0 0;color:var(--gray-d);font-size:12.5px}
+  .hero{margin:12px 14px 8px;border-radius:16px;padding:14px 16px 12px;color:var(--ink);text-align:center;
+    background:var(--tint)}
+  .hero h1{display:none}
+  .hero p{display:none}
+  .hero .stats{display:flex;gap:10px;margin-top:2px}
+  .hero .stats .st{flex:1;background:#fff;border-radius:14px;padding:11px 4px;
+    border:1px solid var(--line)}
+  .hero .stats .st b{display:block;font-size:20px;font-weight:900;color:var(--brand)}
+  .hero .stats .st small{font-size:10.5px;color:var(--gray-d);font-weight:600}
+
+  /* ---- stage cards ---- */
+  .card{position:relative;display:flex;align-items:center;gap:15px;border-radius:16px;padding:15px 16px;
+    margin-bottom:15px;cursor:pointer;transition:transform .12s;--c:#43a047;background:#fff;
+    border:1.5px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+  .card:active{transform:translateY(2px)}
+  .card.cur{border:2px solid var(--c);background:color-mix(in srgb,var(--c) 6%,#fff)}
+  .card.lockcard{cursor:default;background:#faf7f0;border-color:var(--line)}
+  .ring{width:54px;height:54px;border-radius:15px;flex:none;display:grid;place-items:center;font-size:27px;
+    color:#fff;background:var(--c)}
+  .card.lockcard .ring{background:#e6e2d8;filter:grayscale(1);font-size:22px;opacity:.6}
+  .ring i{display:contents}
+  .card .info{flex:1;min-width:0}
+  .card .info b{font-size:16.5px;display:block;font-weight:800;color:#363636}
+  .card.lockcard .info b{color:#a2a2a2}
+  .card .info small{font-size:12px;display:block;margin-top:3px;font-weight:600;color:#9c9c9c}
+  .card .arw{font-size:24px;font-weight:800;color:var(--c)}
+
+  /* ---- unit path ---- */
+  .backbar{display:flex;align-items:center;gap:8px;padding:16px 16px 8px;font-weight:800;font-size:17px}
+  .backbar button{font-size:26px;background:none;border:none;cursor:pointer;color:var(--gray-d);line-height:1;
+    min-width:44px;min-height:44px;display:grid;place-items:center;margin-left:-8px}
+  .path{padding:8px 16px 30px}
+  .unode{display:flex;align-items:center;gap:13px;background:#fff;border-radius:16px;padding:13px 14px;
+    margin-bottom:12px;border:1.5px solid var(--line);--c:#7ac74f}
+  .unode.open{cursor:pointer;transition:transform .1s}
+  .unode.open:active{transform:scale(.98)}
+  .unode.cur{border:2px solid var(--c)}
+  .unode .udot{width:50px;height:50px;border-radius:15px;flex:none;display:grid;place-items:center;
+    font-size:25px;color:#fff;background:var(--c)}
+  .unode.lock .udot{background:#e6e2d8;font-size:20px;filter:grayscale(1) opacity(.55)}
+  .unode .ulab{flex:1;min-width:0}
+  .unode .ulab b{font-size:15.5px;font-weight:800;display:block}
+  .unode.lock .ulab b{color:#a6a6a6}
+  .unode .ulab small{color:#707070;font-size:12px;display:block;margin-top:3px}
+  .unode .ust{flex:none;font-weight:800}
+  .unode .ust .st-star{color:var(--gold);letter-spacing:1px;font-size:14px}
+  .unode .ust .st-go{background:var(--c);color:#fff;border-radius:12px;padding:6px 15px;font-size:12.5px}
+  .unode .ust .st-lock{color:#d2d2d2;font-size:20px}
+
+  /* ---- progress dashboard ---- */
+  .big-ring{width:130px;height:130px;border-radius:50%;margin:6px auto 2px;display:grid;place-items:center;
+    background:conic-gradient(var(--brand) var(--p),var(--gray) 0)}
+  .big-ring i{width:104px;height:104px;border-radius:50%;background:#fff;display:grid;place-items:center;
+    flex-direction:column;font-style:normal;text-align:center}
+  .big-ring i b{font-size:28px;color:var(--brand)} .big-ring i small{color:var(--gray-d);font-size:12px}
+  .kpis{display:flex;gap:10px;margin:14px 0}
+  .kpi{flex:1;background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:14px;
+    padding:12px 6px;text-align:center}
+  .kpi b{display:block;font-size:22px} .kpi small{color:var(--gray-d);font-size:11.5px}
+  .sec-t{font-weight:800;margin:18px 0 8px;font-size:15px}
+  .prow{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:11px}
+  .prow .pr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .prow .nm{font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:7px}
+  .prow .pc{color:var(--gray-d);font-weight:700;font-size:13px;flex:none}
+  .prow .tb{height:12px;background:var(--gray);border-radius:6px;overflow:hidden}
+  .prow .tb>i{display:block;height:100%;border-radius:6px;min-width:0;transition:width .4s}
+
+  /* ---- mistakes ---- */
+  .mist-hero{text-align:center;padding:10px 0 4px}
+  .mist-hero .n{font-size:44px;font-weight:800;color:var(--red)}
+  .mi{background:#fff;border:2px solid var(--gray);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .mi .zh{font-weight:700;font-size:15px}
+  .mi .en{color:#6b6b6b;font-size:13.5px;margin-top:3px}
+  .mi .box{float:right;font-size:11px;color:#fff;background:var(--gold);border-radius:8px;padding:2px 7px;font-weight:700}
+  .empty{text-align:center;color:var(--gray-d);padding:50px 20px;font-size:14px;line-height:1.8}
+
+  /* ---- lesson ---- */
+  #lesson{padding:12px 16px 16px}
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .x{font-size:26px;color:var(--gray-d);background:none;border:none;cursor:pointer;line-height:1;
+    min-width:44px;min-height:44px;display:grid;place-items:center}
+  .bar{flex:1;height:14px;background:var(--gray);border-radius:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--brand);border-radius:8px;width:0;transition:width .3s}
+  .hearts{color:var(--red);font-weight:800;font-size:16px;min-width:34px;text-align:right}
+  .qwrap{flex:1;display:flex;flex-direction:column;padding-top:14px}
+  .qright{display:flex;flex-direction:column;flex:1;min-height:0}
+  .qhint{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-d);margin-bottom:8px}
+  .lchip{margin-left:auto;border:2px solid var(--blue);color:var(--blue);border-radius:20px;
+    padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#fff}
+  .lchip.on{background:var(--blue);color:#fff}
+  .speak{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .spk-btn{width:60px;height:60px;border-radius:16px;border:2px solid var(--blue);border-bottom-width:5px;
+    background:var(--blue);color:#fff;font-size:26px;cursor:pointer;flex:none}
+  .spk-btn:active{transform:translateY(2px);border-bottom-width:3px}
+  .zh{font-size:22px;font-weight:700;line-height:1.4}
+  .answer{margin-top:18px;min-height:96px;border:2px dashed #e0e0e0;border-radius:16px;background:#fafbf8;
+    padding:13px;display:flex;flex-wrap:wrap;gap:9px;align-content:flex-start;position:relative}
+  .answer:empty::before{content:"👇 點下方詞塊，依序排出句子";position:absolute;left:15px;top:16px;
+    color:#a0a0a0;font-size:13px;font-weight:600}
+  .bank{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:56px}
+  .tile{background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:13px;
+    padding:10px 15px;font-size:20px;cursor:pointer;transition:transform .06s;font-weight:600}
+  .tile:active{transform:translateY(2px)}
+  .tile.hole{background:var(--gray);border-color:var(--gray);color:transparent;pointer-events:none}
+  .tile.punc{color:var(--gray-d)}
+  .tile.glow{border-color:#e69500;background:#fff7e6;color:#b36b00;animation:glowpulse .6s ease-in-out 4}
+  @keyframes glowpulse{0%,100%{box-shadow:0 0 0 0 rgba(230,149,0,.0);transform:none}
+    50%{box-shadow:0 0 0 6px rgba(230,149,0,.28);transform:translateY(-2px)}}
+  .check{margin-top:auto;padding-top:16px}
+  .btn{width:100%;padding:15px;border:none;border-radius:16px;font-size:17px;font-weight:800;cursor:pointer;
+    color:#fff;background:var(--gray-d);border-bottom:5px solid rgba(0,0,0,.18)}
+  .btn.go{background:var(--brand);border-bottom-color:var(--brand-d)}
+  .btn:disabled{opacity:.55} .btn:active{transform:translateY(2px);border-bottom-width:2px}
+  .sheet{position:absolute;left:0;right:0;bottom:0;padding:18px 16px 22px;border-radius:22px 22px 0 0;
+    transform:translateY(110%);transition:transform .25s;z-index:20}
+  .sheet.show{transform:translateY(0)}
+  .sheet.ok{background:var(--green-l)} .sheet.no{background:#ffdfe0}
+  .sheet .hd{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
+  .sheet.ok .hd{color:var(--green-d)} .sheet.no .hd{color:var(--red)}
+  .sheet .sol{margin:8px 0 14px;font-size:15px}
+  .shake{animation:sh .35s}
+  @keyframes sh{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+  /* ---- done ---- */
+  #done{align-items:center;justify-content:center;text-align:center;padding:30px;gap:6px}
+  #done .big{font-size:66px} #done h2{margin:4px 0;color:var(--brand)}
+  #done .stat{display:flex;gap:14px;margin:16px 0 26px}
+  #done .stat div{background:#fff;border:2px solid var(--gray);border-bottom-width:4px;border-radius:16px;padding:12px 20px}
+  #done .stat b{display:block;font-size:24px} #done .stat small{color:var(--gray-d)}
+
+  /* ---- bottom nav ---- */
+  nav{display:flex;border-top:2px solid var(--gray);background:#fff}
+  nav.hide{display:none}
+  nav button{flex:1;background:none;border:none;padding:11px 0 10px;cursor:pointer;color:var(--gray-d);
+    font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+  nav button .ni{font-size:21px}
+  nav button.act{color:var(--brand)}
+  .badge{position:relative}
+  .badge[data-n]:not([data-n="0"])::after{content:attr(data-n);position:absolute;top:-3px;right:50%;
+    transform:translateX(18px);background:var(--red);color:#fff;font-size:10px;border-radius:9px;padding:0 5px;font-weight:800}
+
+  /* 題目 emoji 輔助 */
+  .qemoji{font-size:44px;text-align:center;line-height:1;margin-bottom:6px;min-height:0}
+  .qemoji:empty{display:none}
+  /* 已排入答題框的詞塊：藍色描邊區分 + 排入微動畫 */
+  .answer .tile{border-color:var(--brand);background:var(--tint);color:var(--brand-d);animation:pop .14s ease}
+  .tile.bad{border-color:var(--red)!important;background:#ffe9ec!important;color:var(--red)!important}
+  @keyframes pop{0%{transform:scale(.7);opacity:.3}100%{transform:scale(1);opacity:1}}
+  /* 提示鈕 + 檢查鈕並排 */
+  .check{display:flex;gap:10px}
+  .check .btn{flex:1;width:auto}
+  .btn.hint{flex:none!important;padding:15px 16px;background:#fff;color:#e69500;
+    border:2px solid var(--gold);border-bottom:5px solid #e0a000}
+  /* 愛心用完彈窗 */
+  .modal-wrap{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:24px}
+  .modal-wrap.show{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:26px 22px;max-width:340px;width:100%;text-align:center;
+    border:1px solid var(--line);animation:pop .2s ease}
+  .modal .m-emoji{font-size:52px}
+  .modal .m-title{font-size:21px;font-weight:800;margin:8px 0 6px}
+  .modal .m-msg{color:#888;font-size:13.5px;margin-bottom:20px;line-height:1.6}
+
+  /* ===== 平板／橫式 寬螢幕自適應 ===== */
+  @media (min-width:700px){
+    #app{max-width:1000px}
+    /* 首頁關卡卡片：雙欄 */
+    #learn .pad{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;align-content:start}
+    /* 單元路徑：雙欄 */
+    .path{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+    /* 進度／錯題本：置中不要拉太寬 */
+    #progress .pad,#mistakes .pad{max-width:700px;margin:0 auto;width:100%}
+    #progress .kpis .kpi b{font-size:24px}
+    /* 課程：寬螢幕改「置中單欄(加寬)」，避免雙欄左側空蕩 */
+    #lesson{align-items:center}
+    #lesson .top,#lesson .qwrap{width:100%;max-width:660px}
+    .qleft{text-align:center;margin-top:8px}
+    .qleft .speak{justify-content:center;gap:16px}
+    .qleft .spk-btn{width:72px;height:72px;font-size:32px}
+    .qleft .zh{font-size:28px}
+    .qemoji{font-size:56px;margin-bottom:10px}
+    .answer{min-height:110px}
+  }
+  #installBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom));z-index:50;width:calc(100% - 24px);max-width:440px}
+  #installBar:empty{display:none}
+  #installBar .install-btn{display:block;width:100%;border:0;border-radius:14px;padding:13px 15px;font-size:15px;font-weight:800;cursor:pointer;background:var(--brand);color:#fff}
+  #installBar .install-btn.sec{background:var(--tint);color:var(--brand)}
+  #installBar .install-tip{background:#fff7e6;border:1px solid #ffe0a3;border-radius:14px;padding:13px;font-size:13px;line-height:1.85;color:#5a4a1a}
+  #installBar .install-x{display:inline-block;margin-top:6px;color:var(--brand);font-weight:800;cursor:pointer}
+
+  /* ---- 稜線識別：masthead 顯示規則 ---- */
+  .rl-appbar{border-bottom:1px solid var(--line);flex:none}
+  #app:has(nav.hide) .rl-appbar{display:none}
+</style>
+</head>
+<body>
+<div id="app" class="theme-plum">
+
+  <!-- 稜線識別 masthead（取代原漸層頁首 hero 標題） -->
+  <header class="rl-appbar">
+    <span class="rl-mark"><svg class="rl-glyph" viewBox="0 0 2536.000000 1287.000000" width="30" height="30" fill="currentColor" aria-label="玉山"><g transform="translate(0.000000,1287.000000) scale(0.100000,-0.100000)"
+fill="currentColor" stroke="none">
+<path d="M14345 12615 c-33 -7 -71 -18 -85 -23 l-25 -10 3 -408 2 -408 106
+186 c58 102 115 196 125 207 40 43 57 36 383 -163 185 -113 244 -156 307 -222
+43 -45 285 -399 321 -469 27 -52 77 -203 145 -435 60 -207 66 -233 66 -320 0
+-110 -18 -188 -92 -396 -128 -362 -282 -654 -645 -1223 -229 -358 -510 -820
+-639 -1047 -61 -108 -128 -267 -166 -395 -29 -93 -110 -488 -275 -1325 -62
+-315 -99 -445 -150 -520 -41 -60 -60 -76 -271 -219 -223 -152 -342 -240 -400
+-299 -72 -72 -181 -212 -335 -426 -73 -102 -161 -222 -197 -267 l-63 -82 -45
+30 c-90 61 -160 83 -265 83 -87 0 -105 -3 -215 -43 -153 -55 -271 -87 -360
+-96 l-70 -7 -110 103 c-235 219 -584 512 -727 610 -125 86 -277 156 -365 169
+-80 13 -161 2 -244 -31 -113 -44 -337 -197 -919 -627 -96 -72 -176 -129 -178
+-127 -6 6 74 168 245 495 99 190 278 539 398 775 120 237 235 457 255 491 66
+109 143 194 278 306 201 167 275 264 353 459 38 96 108 349 122 444 l6 40
+-152 -2 -152 -2 -26 -103 c-80 -318 -153 -443 -356 -604 -225 -179 -324 -316
+-533 -734 -45 -91 -133 -262 -195 -380 -62 -118 -254 -489 -426 -823 l-314
+-608 -30 6 c-166 33 -664 85 -837 87 -251 3 -359 -44 -898 -395 -134 -88 -299
+-192 -365 -232 -112 -68 -425 -229 -560 -290 -168 -75 -588 -232 -1005 -375
+-659 -227 -1231 -462 -1805 -744 -300 -148 -345 -178 -345 -231 0 -13 8 -31
+17 -40 27 -27 93 -14 248 49 645 265 879 351 1760 646 896 300 1077 365 1315
+472 301 136 491 245 884 508 513 344 568 368 801 357 109 -5 402 -40 600 -70
+l78 -12 -99 -80 c-320 -260 -469 -337 -999 -521 -331 -115 -434 -164 -590
+-281 -227 -169 -745 -611 -862 -736 -39 -41 -53 -64 -53 -84 0 -61 47 -69 118
+-21 26 18 144 107 262 198 301 232 517 392 630 466 188 123 294 167 633 259
+498 136 736 263 1167 620 309 257 632 502 1174 894 28 19 47 29 44 21 -4 -8
+-20 -46 -37 -85 -17 -38 -79 -209 -137 -380 -115 -336 -159 -450 -253 -652
+-46 -100 -61 -143 -61 -177 0 -50 19 -76 55 -76 78 0 309 399 483 835 198 494
+296 688 391 779 51 49 102 37 266 -59 230 -135 529 -390 1103 -940 109 -104
+267 -255 352 -335 188 -178 275 -280 488 -579 92 -128 179 -244 195 -257 38
+-32 82 -32 102 0 14 20 14 31 5 67 -15 56 -171 367 -256 511 -165 279 -237
+367 -509 621 -88 82 -161 153 -163 157 -1 4 68 29 155 56 122 38 173 49 224
+49 62 0 69 -2 125 -45 32 -24 100 -85 149 -134 307 -307 648 -615 805 -730 92
+-67 248 -141 360 -172 52 -14 145 -41 206 -60 190 -60 323 -155 624 -449 282
+-275 418 -389 528 -443 28 -15 52 -29 52 -32 0 -7 -112 -88 -230 -167 -175
+-117 -379 -231 -765 -427 -226 -115 -502 -257 -615 -316 -113 -59 -459 -236
+-770 -392 -311 -157 -590 -300 -620 -318 -142 -84 -181 -130 -159 -188 27 -71
+77 -85 177 -52 79 27 463 189 682 288 85 38 184 82 220 97 127 53 1209 535
+1432 638 365 168 682 351 999 578 324 232 670 500 1054 814 312 256 408 317
+552 349 85 19 211 21 320 4 64 -9 74 -13 59 -22 -123 -74 -329 -276 -506 -496
+-291 -362 -520 -590 -888 -883 -113 -90 -162 -143 -162 -174 0 -17 37 -53 54
+-53 16 0 268 163 416 269 273 195 436 340 732 649 114 119 249 254 300 300
+114 101 286 218 393 268 136 63 184 60 743 -51 68 -14 207 -37 310 -52 164
+-23 213 -26 397 -23 584 8 632 6 728 -23 96 -30 406 -161 707 -300 636 -293
+1458 -646 1880 -807 91 -35 234 -90 317 -122 242 -93 403 -148 432 -148 34 0
+48 10 59 41 25 64 -35 116 -253 219 -236 112 -523 253 -1405 693 -1019 507
+-1063 528 -1314 636 -379 164 -434 175 -831 172 -326 -2 -400 4 -669 59 -254
+51 -230 39 -301 149 -34 53 -99 161 -145 241 -232 405 -347 577 -455 685 -105
+105 -208 173 -700 465 -225 133 -489 295 -585 358 -345 229 -377 285 -515 917
+-97 442 -112 491 -304 970 -259 646 -328 891 -416 1490 -39 267 -52 219 146
+547 112 185 217 376 305 554 74 149 134 276 134 282 0 26 19 10 35 -30 31 -77
+215 -630 260 -783 24 -82 71 -253 104 -380 33 -126 83 -311 110 -410 28 -99
+98 -355 157 -570 58 -214 121 -439 141 -500 71 -223 181 -408 285 -478 81 -54
+140 -68 323 -74 88 -2 172 -9 187 -15 38 -14 60 -53 121 -219 90 -242 207
+-456 353 -649 99 -130 352 -392 631 -654 322 -301 401 -394 689 -810 99 -143
+192 -267 206 -275 32 -18 73 -8 93 23 15 23 14 29 -26 108 -71 141 -178 325
+-289 499 -181 280 -218 325 -588 713 -334 349 -385 409 -513 598 -131 196
+-206 347 -284 573 -79 231 -171 338 -330 384 -22 7 -118 16 -214 21 l-173 8
+-35 34 c-73 70 -134 240 -307 858 -58 206 -146 530 -196 720 -177 671 -309
+1101 -473 1545 -46 127 -89 243 -94 258 -5 19 -4 63 5 125 14 106 10 214 -13
+324 -9 39 -14 73 -12 75 6 5 248 -148 328 -208 115 -85 127 -105 235 -377 53
+-136 136 -339 184 -452 48 -113 113 -266 145 -340 138 -328 331 -763 378 -852
+27 -54 87 -146 131 -205 45 -60 131 -174 192 -254 144 -190 175 -236 269 -404
+207 -374 303 -490 690 -833 398 -353 557 -526 748 -817 177 -270 285 -491 507
+-1035 261 -640 373 -877 583 -1229 143 -239 178 -281 237 -281 54 0 90 34 90
+84 0 45 -103 330 -215 596 -120 283 -241 586 -388 975 -150 393 -223 563 -357
+821 -54 107 -95 194 -90 194 5 0 21 -5 37 -11 34 -14 703 -246 968 -336 308
+-105 339 -125 412 -275 64 -131 95 -252 168 -663 92 -519 118 -623 195 -778
+73 -146 164 -269 426 -573 177 -206 396 -476 546 -674 157 -206 176 -225 229
+-225 33 0 46 6 65 28 39 46 29 94 -55 272 -121 254 -333 560 -663 957 -177
+213 -256 352 -302 529 -14 52 -48 236 -76 409 -46 285 -99 579 -116 638 -6 22
+-5 22 47 17 30 -2 144 -9 254 -15 414 -23 683 -58 841 -110 35 -12 89 -38 121
+-59 65 -42 62 -40 404 -342 423 -373 505 -438 819 -645 386 -254 713 -436 784
+-438 101 -2 158 109 100 193 -10 13 -195 156 -413 319 -526 392 -605 460
+-1071 917 -282 278 -329 319 -429 383 -205 133 -534 190 -1272 222 -135 6
+-260 15 -278 20 -18 5 -52 27 -76 49 -60 55 -162 129 -215 156 -46 23 -349
+130 -905 320 -320 110 -575 207 -727 277 l-87 41 257 87 c141 48 322 111 402
+139 199 71 225 70 415 -21 164 -78 226 -98 311 -98 134 0 205 33 716 333 134
+78 200 102 252 91 38 -8 241 -109 471 -234 386 -210 711 -379 885 -460 102
+-48 223 -108 269 -134 94 -54 134 -63 139 -30 2 15 -19 41 -76 95 -94 88 -203
+167 -432 311 l-170 107 52 19 c106 39 131 44 192 40 72 -4 105 -20 446 -212
+477 -269 717 -368 1240 -510 112 -31 212 -56 221 -56 9 0 24 8 33 19 14 15 15
+23 5 44 -16 36 -226 133 -609 284 -286 112 -327 132 -683 335 -403 229 -505
+283 -584 303 -86 22 -109 19 -281 -36 -115 -38 -178 -52 -237 -56 l-80 -6
+-201 109 c-493 268 -567 297 -692 274 -30 -5 -56 -10 -56 -10 -1 0 -1 -30 -1
+-67 l0 -68 -104 -3 c-56 -1 -108 1 -115 7 -7 6 -43 -9 -106 -46 -353 -205
+-424 -237 -514 -231 -51 3 -87 16 -212 76 -253 122 -275 121 -671 -19 -416
+-147 -539 -184 -670 -203 -41 -6 -44 -4 -150 82 -193 158 -438 378 -505 453
+-84 95 -180 240 -319 481 -128 223 -192 318 -299 443 -139 162 -218 274 -278
+393 -64 126 -253 557 -439 1002 -64 151 -162 388 -220 525 -125 299 -167 382
+-232 457 -91 106 -127 133 -581 424 -189 121 -369 255 -431 320 -25 27 -99
+128 -164 224 -236 351 -226 341 -685 622 -188 115 -279 161 -365 183 -71 18
+-208 18 -290 0z m760 -4495 c38 -244 68 -385 124 -580 60 -213 115 -361 233
+-630 179 -406 218 -523 288 -865 139 -674 228 -885 454 -1076 137 -116 277
+-206 906 -579 206 -123 404 -244 440 -271 124 -90 221 -208 332 -399 140 -241
+207 -358 227 -391 l21 -36 -178 34 c-511 97 -639 115 -812 117 -193 1 -278
+-13 -436 -75 -154 -60 -248 -122 -509 -336 -538 -440 -921 -743 -970 -765 -18
+-8 -34 -4 -86 22 -166 84 -252 157 -511 437 -289 312 -490 478 -659 543 -42
+16 -140 48 -216 71 -234 70 -342 131 -558 318 -123 107 -495 460 -495 470 0 4
+61 82 136 172 75 90 180 220 232 289 173 227 275 310 585 478 261 143 354 213
+442 337 113 159 138 241 236 750 177 928 205 1064 252 1220 52 169 71 208 326
+645 143 244 161 273 167 267 2 -1 15 -77 29 -167z"/>
+<path d="M12005 12275 c-5 -2 -26 -6 -45 -9 l-35 -6 3 -646 c2 -449 -1 -650
+-8 -659 -12 -15 27 -127 115 -329 135 -310 155 -397 155 -666 0 -223 14 -397
+45 -564 14 -72 45 -241 70 -376 53 -286 101 -522 115 -566 21 -62 86 -105 160
+-106 98 0 178 74 278 255 27 51 108 200 178 332 l129 240 -5 325 -5 325 -65
+-100 c-66 -103 -167 -279 -325 -569 -49 -91 -90 -164 -92 -163 -1 2 -13 70
+-28 152 -14 83 -37 209 -51 280 -23 117 -26 166 -34 485 -6 267 -12 374 -25
+430 -22 100 -87 287 -174 500 -104 254 -136 388 -176 735 -8 71 -15 154 -15
+182 0 50 1 53 25 53 14 0 137 -22 273 -49 328 -66 467 -85 567 -77 44 3 91 9
+105 14 l25 7 0 231 0 231 -50 -15 c-96 -31 -219 -21 -525 41 -374 77 -535 99
+-585 82z"/>
+<path d="M9479 10608 c-17 -24 -41 -63 -54 -88 -22 -44 -58 -151 -52 -156 1
+-2 35 62 75 141 39 80 70 145 67 145 -3 0 -19 -19 -36 -42z"/>
+<path d="M6700 7319 c-281 -148 -437 -220 -777 -358 -147 -60 -313 -127 -367
+-150 l-100 -42 -75 36 c-42 20 -140 75 -219 121 -179 107 -222 125 -292 126
+-84 0 -141 -22 -355 -141 -161 -89 -147 -91 -463 70 -658 337 -778 373 -967
+296 -44 -18 -179 -93 -300 -166 -569 -346 -828 -492 -915 -518 -80 -23 -143
+-20 -240 12 -123 40 -186 39 -281 -7 -61 -29 -424 -281 -801 -555 -75 -55 -96
+-81 -83 -103 13 -22 55 -7 219 79 190 98 301 164 458 270 155 104 269 161 321
+161 24 0 83 -14 133 -31 243 -83 362 -43 959 317 171 103 367 222 437 264 202
+122 246 129 415 68 66 -24 804 -385 820 -402 6 -5 -248 -223 -399 -342 -223
+-178 -278 -226 -278 -247 0 -31 49 -15 192 64 222 122 406 250 596 416 46 40
+113 94 149 120 94 67 274 168 325 182 54 15 66 11 271 -97 l158 -84 -88 -50
+c-121 -69 -189 -117 -291 -202 -105 -88 -442 -430 -646 -656 -82 -91 -249
+-275 -370 -410 -121 -134 -246 -271 -277 -305 l-57 -60 -143 34 c-168 39 -463
+130 -674 208 -259 96 -324 114 -415 120 -202 12 -294 -36 -785 -413 -302 -231
+-454 -344 -770 -574 -309 -224 -441 -328 -467 -369 -37 -55 -12 -122 49 -135
+54 -12 154 36 463 222 278 167 720 468 1029 701 157 118 310 225 339 239 47
+21 65 24 131 20 66 -4 111 -18 356 -110 263 -100 583 -208 612 -208 7 0 13 -4
+13 -9 0 -13 -289 -277 -490 -447 -360 -304 -694 -561 -1095 -843 -357 -250
+-525 -373 -551 -404 -54 -65 -52 -147 7 -203 28 -27 36 -29 102 -29 64 0 84 6
+179 48 122 56 225 113 425 239 126 79 162 96 300 142 166 56 280 100 478 186
+66 29 217 92 335 140 355 146 748 318 860 377 240 126 384 248 548 466 231
+306 358 428 537 516 99 49 422 167 431 158 7 -6 -59 -154 -119 -267 -48 -91
+-210 -360 -267 -445 -43 -63 -80 -142 -80 -169 0 -32 36 -66 69 -66 53 0 152
+84 294 249 239 278 312 403 502 856 139 332 165 388 239 513 159 264 582 836
+744 1003 164 170 109 137 972 588 l165 86 -444 3 c-245 1 -449 6 -455 11 -7 6
+-92 -33 -236 -110z m-656 -846 c-293 -418 -419 -628 -528 -878 -32 -71 -67
+-139 -79 -150 -12 -11 -92 -44 -177 -74 -235 -82 -477 -178 -555 -221 -180
+-99 -306 -214 -490 -445 -130 -163 -293 -337 -366 -390 -67 -50 -157 -99 -324
+-177 -146 -69 -370 -165 -450 -194 -39 -15 -40 -14 -20 4 11 10 94 81 185 158
+250 211 573 540 976 994 946 1068 1001 1114 1654 1361 113 43 209 78 213 78 5
+1 -13 -29 -39 -66z"/>
+<path d="M7963 7400 c-13 -54 -158 -441 -204 -544 -106 -239 -157 -313 -555
+-801 -133 -164 -359 -450 -500 -634 -74 -97 -79 -107 -79 -152 0 -95 88 -136
+170 -78 128 92 558 504 792 761 232 254 453 587 540 816 33 87 208 600 216
+632 l6 25 -190 0 -190 0 -6 -25z"/>
+<path d="M8651 7225 c-75 -245 -77 -271 -20 -300 73 -38 121 -1 214 165 49 88
+132 256 155 315 7 19 4 20 -140 20 l-147 0 -62 -200z"/>
+<path d="M21922 6908 c-16 -16 -15 -101 2 -142 25 -61 252 -229 515 -381 133
+-77 296 -158 339 -168 21 -5 52 14 52 32 0 16 -61 62 -180 136 -249 155 -432
+293 -604 456 -84 79 -102 89 -124 67z"/>
+<path d="M2708 6203 c-53 -43 -160 -130 -239 -194 -79 -64 -187 -144 -239
+-178 -141 -90 -137 -86 -124 -108 23 -37 116 -9 272 80 143 82 267 173 374
+275 98 94 126 140 113 182 -13 40 -55 25 -157 -57z"/>
+<path d="M8967 3059 c-20 -11 -110 -88 -200 -173 -177 -167 -337 -303 -585
+-498 -160 -126 -184 -153 -168 -193 10 -28 38 -28 93 -1 172 84 690 480 874
+667 93 94 122 153 95 194 -20 31 -56 32 -109 4z"/>
+</g>
+<g transform="translate(0.000000,1287.000000) scale(0.100000,-0.100000)"
+fill="#de9a45" stroke="none">
+<path d="M14080 12531 c-74 -26 -265 -102 -425 -169 -159 -66 -335 -138 -390
+-159 l-100 -39 -3 -219 c-1 -121 0 -225 2 -232 8 -21 254 66 559 198 87 38
+160 69 162 69 2 0 -16 -42 -39 -92 -51 -109 -113 -284 -149 -418 -34 -126 -65
+-280 -132 -660 -89 -502 -93 -513 -286 -802 l-119 -178 0 -314 c0 -173 4 -317
+9 -320 5 -3 31 34 57 82 46 82 138 222 406 617 193 286 221 363 328 910 108
+550 132 643 230 851 l50 107 -2 405 c-2 260 -7 406 -13 408 -5 2 -71 -19 -145
+-45z"/>
+<path d="M11858 12235 c-113 -42 -223 -128 -793 -620 -464 -400 -397 -357
+-904 -592 -373 -173 -505 -244 -595 -323 -27 -24 -60 -78 -118 -193 -80 -160
+-80 -160 -115 -346 -35 -184 -36 -186 -74 -222 -20 -20 -122 -87 -226 -149
+-263 -158 -327 -203 -405 -284 -99 -101 -162 -236 -272 -576 -46 -146 -92
+-284 -100 -308 -9 -24 -41 -127 -72 -230 -60 -200 -86 -261 -135 -317 -43 -49
+-170 -130 -324 -209 -251 -128 -788 -421 -789 -431 -1 -6 157 -11 452 -13
+l452 -2 70 35 70 35 -2 -32 -3 -33 181 -3 c137 -2 184 1 192 10 5 7 23 56 40
+108 16 52 77 244 135 425 58 182 131 413 162 515 124 409 198 626 225 665 42
+60 86 98 185 159 87 54 90 55 93 32 2 -13 -6 -73 -17 -133 -11 -59 -39 -218
+-61 -353 -67 -404 -112 -574 -300 -1144 -49 -148 -87 -273 -84 -278 3 -4 66
+-8 140 -8 l134 0 20 33 c29 46 102 228 235 582 210 559 222 601 355 1256 32
+163 77 373 99 465 22 93 50 223 61 289 12 66 30 159 41 207 26 110 39 123 244
+223 120 58 441 209 476 223 4 2 -1 -34 -11 -80 -56 -261 -79 -483 -90 -883
+-10 -336 -23 -686 -36 -922 -8 -140 3 -197 46 -243 47 -50 105 -38 140 30 47
+93 109 515 129 880 6 107 16 283 21 390 18 334 38 468 111 775 28 116 52 219
+54 230 2 11 77 82 167 157 90 75 222 187 294 250 425 368 417 362 425 342 4
+-10 12 -70 18 -133 22 -213 91 -534 116 -532 7 1 10 222 10 643 0 713 6 660
+-67 633z"/>
+<path d="M10525 8070 c-27 -11 -61 -49 -74 -83 -32 -85 -135 -533 -127 -554 4
+-10 38 -13 146 -13 136 0 141 1 150 23 10 25 44 259 61 430 11 105 10 119 -5
+142 -34 52 -100 76 -151 55z"/>
+<path d="M21570 7497 c-52 -30 -94 -58 -92 -63 1 -5 50 -9 110 -9 l107 0 0 60
+c0 45 -4 60 -15 63 -8 1 -58 -22 -110 -51z"/>
+</g></svg></span>
+    <div>
+      <div class="rl-title">國中英語句型</div>
+      <div class="rl-sub">拼句・國小 → 國中</div>
+    </div>
+    <span class="rl-spacer"></span>
+  </header>
+
+  <!-- 學習 -->
+  <section id="learn" class="screen on"></section>
+
+  <!-- 進度 -->
+  <section id="progress" class="screen"></section>
+
+  <!-- 錯題本 -->
+  <section id="mistakes" class="screen"></section>
+
+  <!-- 課程 -->
+  <section id="lesson" class="screen">
+    <div class="top">
+      <button class="x" onclick="quit()">✕</button>
+      <div class="bar"><i id="pbar"></i></div>
+      <div class="hearts" id="hearts">❤ <span id="hp">5</span></div>
+    </div>
+    <div class="qwrap">
+      <div class="qhint"><span id="qtag">把中文翻成英文</span>
+        <span class="lchip" id="lchip" onclick="toggleListen()">👂 聽力</span></div>
+      <div class="qleft">
+        <div class="qemoji" id="qemoji"></div>
+        <div class="speak"><button class="spk-btn" onclick="speakCur()">🔊</button>
+          <div class="zh" id="zh"></div></div>
+      </div>
+      <div class="qright">
+        <div class="answer" id="answer"></div>
+        <div class="bank" id="bank"></div>
+        <div class="check">
+          <button class="btn hint" id="hintBtn" onclick="hint()">💡 提示</button>
+          <button class="btn" id="checkBtn" onclick="check()" disabled>檢查</button>
+        </div>
+      </div>
+    </div>
+    <div class="sheet" id="sheet">
+      <div class="hd" id="sheetHd"></div>
+      <div class="sol" id="sheetSol"></div>
+      <button class="btn go" onclick="nextQ()">繼續</button>
+    </div>
+  </section>
+
+  <!-- 完成 -->
+  <section id="done" class="screen">
+    <div class="big" id="doneEmoji">🎉</div>
+    <h2 id="doneTitle">完成！</h2>
+    <div class="stat">
+      <div><b id="dXp">0</b><small>經驗值</small></div>
+      <div><b id="dAcc">0%</b><small>正確率</small></div>
+    </div>
+    <button class="btn go" style="max-width:260px" onclick="quit()">返回</button>
+  </section>
+
+  <!-- 愛心用完彈窗 -->
+  <div id="modal" class="modal-wrap"><div class="modal">
+    <div class="m-emoji">💛</div>
+    <div class="m-title">愛心用完了！</div>
+    <div class="m-msg">沒關係，休息一下～<br>要補滿愛心繼續，還是先離開？</div>
+    <button class="btn go" onclick="modalContinue()">補滿愛心，繼續 ❤❤❤</button>
+    <button class="btn" style="margin-top:10px;background:#eee;color:#777;border-bottom-color:#dcdcdc" onclick="modalQuit()">離開本關</button>
+  </div></div>
+
+  <div id="installBar"></div>
+
+  <!-- 底部分頁 -->
+  <nav id="nav">
+    <button id="navLearn" class="act" onclick="showTab('learn')"><span class="ni">🧩</span>學習</button>
+    <button id="navProg" onclick="showTab('progress')"><span class="ni">📊</span>進度</button>
+    <button id="navMist" class="badge" data-n="0" onclick="showTab('mistakes')"><span class="ni">📕</span>錯題本</button>
+  </nav>
+</div>
+
+<script>
+const STAGES = [{"title": "國小基礎", "icon": "🧒", "grade": "3–6年級", "color": "#e8930a", "units": [{"name": "打招呼與問候", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "哈囉。", "t": ["Hello", "."], "d": ["hi", "are"]}, {"zh": "早安。", "t": ["Good", "morning", "."], "d": ["morn", "night"]}, {"zh": "你好嗎？", "t": ["How", "are", "you", "?"], "d": ["is", "am"]}, {"zh": "我很好，謝謝你。", "t": ["I", "am", "fine", ",", "thank", "you", "."], "d": ["is", "are"]}, {"zh": "很高興認識你。", "t": ["Nice", "to", "meet", "you", "."], "d": ["meat", "see"]}, {"zh": "再見。", "t": ["Goodbye", "."], "d": ["hello", "bye"]}, {"zh": "待會見。", "t": ["See", "you", "later", "."], "d": ["sees", "seen"]}, {"zh": "晚安。", "t": ["Good", "night", "."], "d": ["morning", "day"]}, {"zh": "下午好。", "t": ["Good", "afternoon", "."], "d": ["evening", "noon"]}, {"zh": "你好嗎？我很好。", "t": ["How", "are", "you", "?", "I", "am", "good", "."], "d": ["is"]}], "icon": "👋", "color": "#e8930a"}, {"name": "自我介紹", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "我是艾咪。", "t": ["I", "am", "Amy", "."], "d": ["is", "are"]}, {"zh": "我十歲。", "t": ["I", "am", "ten", "years", "old", "."], "d": ["is", "have"]}, {"zh": "這是我的朋友。", "t": ["This", "is", "my", "friend", "."], "d": ["these", "are"]}, {"zh": "我的名字是湯姆。", "t": ["My", "name", "is", "Tom", "."], "d": ["am", "are"]}, {"zh": "我來自台灣。", "t": ["I", "am", "from", "Taiwan", "."], "d": ["is", "are"]}, {"zh": "她是我的老師。", "t": ["She", "is", "my", "teacher", "."], "d": ["am", "are"]}, {"zh": "他是我的爸爸。", "t": ["He", "is", "my", "father", "."], "d": ["am", "are"]}, {"zh": "我是一個學生。", "t": ["I", "am", "a", "student", "."], "d": ["an", "is"]}, {"zh": "很高興見到你，我是莉莉。", "t": ["Nice", "to", "see", "you", ",", "I", "am", "Lily", "."], "d": ["is", "are"]}, {"zh": "這是我的媽媽。", "t": ["This", "is", "my", "mother", "."], "d": ["these", "are"]}], "icon": "🙋", "color": "#e8930a"}, {"name": "這是什麼·教室物品", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "這是什麼？", "t": ["What", "is", "this", "?"], "d": ["are", "these"]}, {"zh": "它是一隻狗。", "t": ["It", "is", "a", "dog", "."], "d": ["an", "are"]}, {"zh": "這是一枝筆嗎？", "t": ["Is", "this", "a", "pen", "?"], "d": ["are", "these"]}, {"zh": "是的，它是。", "t": ["Yes", ",", "it", "is", "."], "d": ["are", "am"]}, {"zh": "這是一本書。", "t": ["This", "is", "a", "book", "."], "d": ["an", "these"]}, {"zh": "它是一個書包。", "t": ["It", "is", "a", "bag", "."], "d": ["an", "are"]}, {"zh": "那是一張桌子。", "t": ["That", "is", "a", "desk", "."], "d": ["these", "are"]}, {"zh": "這是一顆蘋果嗎？", "t": ["Is", "this", "an", "apple", "?"], "d": ["a", "are"]}, {"zh": "不，它不是。", "t": ["No", ",", "it", "is", "not", "."], "d": ["are", "am"]}, {"zh": "這是什麼？它是一支尺。", "t": ["What", "is", "this", "?", "It", "is", "a", "ruler", "."], "d": ["are", "an"]}], "icon": "❓", "color": "#e8930a"}, {"name": "指示詞 this/that", "cat": "指示詞", "grade": "國小", "qs": [{"zh": "這是一本書。", "t": ["This", "is", "a", "book", "."], "d": ["these", "are"]}, {"zh": "那是一隻貓。", "t": ["That", "is", "a", "cat", "."], "d": ["those", "are"]}, {"zh": "這些是蘋果。", "t": ["These", "are", "apples", "."], "d": ["this", "is"]}, {"zh": "那些是鳥。", "t": ["Those", "are", "birds", "."], "d": ["that", "is"]}, {"zh": "這是我的書包。", "t": ["This", "is", "my", "bag", "."], "d": ["these", "mine"]}, {"zh": "那是一朵花。", "t": ["That", "is", "a", "flower", "."], "d": ["those", "an"]}, {"zh": "這些是我的鉛筆。", "t": ["These", "are", "my", "pencils", "."], "d": ["this", "mine"]}, {"zh": "那些是狗。", "t": ["Those", "are", "dogs", "."], "d": ["that", "is"]}, {"zh": "這是一顆蛋。", "t": ["This", "is", "an", "egg", "."], "d": ["these", "a"]}, {"zh": "那是一輛車。", "t": ["That", "is", "a", "car", "."], "d": ["those", "are"]}], "icon": "👉", "color": "#e8930a"}, {"name": "我有·這是誰的", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "我有一隻貓。", "t": ["I", "have", "a", "cat", "."], "d": ["has", "an"]}, {"zh": "你有一隻狗嗎？", "t": ["Do", "you", "have", "a", "dog", "?"], "d": ["does", "has"]}, {"zh": "它是我的。", "t": ["It", "is", "mine", "."], "d": ["my", "are"]}, {"zh": "這是誰的？", "t": ["Whose", "is", "this", "?"], "d": ["who", "these"]}, {"zh": "它是我的書。", "t": ["It", "is", "my", "book", "."], "d": ["mine", "are"]}, {"zh": "我有兩枝筆。", "t": ["I", "have", "two", "pens", "."], "d": ["has", "pen"]}, {"zh": "她有一個書包。", "t": ["She", "has", "a", "bag", "."], "d": ["have", "an"]}, {"zh": "這枝筆是你的嗎？", "t": ["Is", "this", "pen", "yours", "?"], "d": ["your", "are"]}, {"zh": "這是誰的書？", "t": ["Whose", "book", "is", "this", "?"], "d": ["who", "these"]}, {"zh": "我沒有貓。", "t": ["I", "do", "not", "have", "a", "cat", "."], "d": ["does", "has"]}], "icon": "🎒", "color": "#e8930a"}, {"name": "我喜歡·我想要", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "我喜歡蘋果。", "t": ["I", "like", "apples", "."], "d": ["likes", "liking"]}, {"zh": "我不喜歡魚。", "t": ["I", "do", "not", "like", "fish", "."], "d": ["does", "likes"]}, {"zh": "你喜歡狗嗎？", "t": ["Do", "you", "like", "dogs", "?"], "d": ["does", "likes"]}, {"zh": "是的，我喜歡。", "t": ["Yes", ",", "I", "do", "."], "d": ["does", "am"]}, {"zh": "我想要一些水。", "t": ["I", "want", "some", "water", "."], "d": ["wants", "a"]}, {"zh": "她喜歡貓。", "t": ["She", "likes", "cats", "."], "d": ["like", "liking"]}, {"zh": "我喜歡我的老師。", "t": ["I", "like", "my", "teacher", "."], "d": ["likes", "mine"]}, {"zh": "你想要一些牛奶嗎？", "t": ["Do", "you", "want", "some", "milk", "?"], "d": ["does", "wants"]}, {"zh": "我想要一個蘋果。", "t": ["I", "want", "an", "apple", "."], "d": ["wants", "a"]}, {"zh": "他不喜歡雨。", "t": ["He", "does", "not", "like", "rain", "."], "d": ["do", "likes"]}], "icon": "❤️", "color": "#e8930a"}, {"name": "Be動詞·情緒外表", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "我很開心。", "t": ["I", "am", "happy", "."], "d": ["is", "are"]}, {"zh": "他很高。", "t": ["He", "is", "tall", "."], "d": ["am", "are"]}, {"zh": "她是我的姐姐。", "t": ["She", "is", "my", "sister", "."], "d": ["are", "am"]}, {"zh": "他們很可愛。", "t": ["They", "are", "cute", "."], "d": ["is", "am"]}, {"zh": "你還好嗎？", "t": ["Are", "you", "OK", "?"], "d": ["Is", "Am"]}, {"zh": "我很累。", "t": ["I", "am", "tired", "."], "d": ["is", "are"]}, {"zh": "我們很忙。", "t": ["We", "are", "busy", "."], "d": ["is", "am"]}, {"zh": "這隻狗很小。", "t": ["The", "dog", "is", "small", "."], "d": ["are", "am"]}, {"zh": "我不難過。", "t": ["I", "am", "not", "sad", "."], "d": ["is", "are"]}, {"zh": "你的朋友友善嗎？", "t": ["Is", "your", "friend", "friendly", "?"], "d": ["Are", "Am"]}], "icon": "😊", "color": "#e8930a"}, {"name": "能力 Can", "cat": "助動詞", "grade": "國小", "qs": [{"zh": "我會游泳。", "t": ["I", "can", "swim", "."], "d": ["cans", "am"]}, {"zh": "你會跑嗎？", "t": ["Can", "you", "run", "?"], "d": ["Do", "cans"]}, {"zh": "是的，我會。", "t": ["Yes", ",", "I", "can", "."], "d": ["cans", "do"]}, {"zh": "不，我不會。", "t": ["No", ",", "I", "can't", "."], "d": ["cans", "don't"]}, {"zh": "她會唱歌。", "t": ["She", "can", "sing", "."], "d": ["cans", "is"]}, {"zh": "他會跳嗎？", "t": ["Can", "he", "jump", "?"], "d": ["Does", "cans"]}, {"zh": "我不會飛。", "t": ["I", "can", "not", "fly", "."], "d": ["cans", "don't"]}, {"zh": "我們會跳舞。", "t": ["We", "can", "dance", "."], "d": ["cans", "are"]}, {"zh": "你會說英語嗎？", "t": ["Can", "you", "speak", "English", "?"], "d": ["Do", "cans"]}, {"zh": "這隻鳥會唱歌。", "t": ["The", "bird", "can", "sing", "."], "d": ["cans", "is"]}], "icon": "💪", "color": "#e8930a"}, {"name": "數字與數量", "cat": "數量詞", "grade": "國小", "qs": [{"zh": "有多少本書？", "t": ["How", "many", "books", "?"], "d": ["much"]}, {"zh": "我有三本書。", "t": ["I", "have", "three", "books", "."], "d": ["has", "book"]}, {"zh": "有五隻貓。", "t": ["There", "are", "five", "cats", "."], "d": ["is", "much"]}, {"zh": "我看見兩隻狗。", "t": ["I", "see", "two", "dogs", "."], "d": ["sees", "much"]}, {"zh": "你有多少支筆？", "t": ["How", "many", "pens", "do", "you", "have", "?"], "d": ["much", "has"]}, {"zh": "我有一顆蘋果。", "t": ["I", "have", "one", "apple", "."], "d": ["has", "apples"]}, {"zh": "桌上有四個杯子。", "t": ["There", "are", "four", "cups", "."], "d": ["is", "much"]}, {"zh": "她有六支鉛筆。", "t": ["She", "has", "six", "pencils", "."], "d": ["have", "much"]}, {"zh": "有多少個學生？", "t": ["How", "many", "students", "?"], "d": ["much"]}, {"zh": "我們有十本書。", "t": ["We", "have", "ten", "books", "."], "d": ["has", "much"]}], "icon": "🔢", "color": "#e8930a"}, {"name": "顏色與外觀", "cat": "主題", "grade": "國小", "qs": [{"zh": "它是什麼顏色？", "t": ["What", "color", "is", "it", "?"], "d": ["are", "colors"]}, {"zh": "它是紅色的。", "t": ["It", "is", "red", "."], "d": ["are", "am"]}, {"zh": "我喜歡藍色。", "t": ["I", "like", "blue", "."], "d": ["likes", "am"]}, {"zh": "這顆球很大。", "t": ["The", "ball", "is", "big", "."], "d": ["are", "am"]}, {"zh": "這是一個新書包。", "t": ["It", "is", "a", "new", "bag", "."], "d": ["are", "an"]}, {"zh": "它們是綠色的。", "t": ["They", "are", "green", "."], "d": ["is", "am"]}, {"zh": "我的貓是黑色的。", "t": ["My", "cat", "is", "black", "."], "d": ["are", "am"]}, {"zh": "這朵花很小。", "t": ["The", "flower", "is", "small", "."], "d": ["are", "am"]}, {"zh": "你喜歡黃色嗎？", "t": ["Do", "you", "like", "yellow", "?"], "d": ["Are", "likes"]}, {"zh": "這輛車是白色的。", "t": ["The", "car", "is", "white", "."], "d": ["are", "am"]}], "icon": "🎨", "color": "#e8930a"}, {"name": "時間·星期·天氣", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "現在幾點？", "t": ["What", "time", "is", "it", "?"], "d": ["are", "day"]}, {"zh": "現在七點。", "t": ["It", "is", "seven", "o'clock", "."], "d": ["are", "am"]}, {"zh": "今天星期幾？", "t": ["What", "day", "is", "it", "today", "?"], "d": ["are", "time"]}, {"zh": "今天星期一。", "t": ["It", "is", "Monday", "."], "d": ["are", "monday"]}, {"zh": "天氣如何？", "t": ["How", "is", "the", "weather", "?"], "d": ["are", "What"]}, {"zh": "天氣晴朗。", "t": ["It", "is", "sunny", "."], "d": ["are", "am"]}, {"zh": "今天下雨。", "t": ["It", "is", "rainy", "today", "."], "d": ["are", "am"]}, {"zh": "現在八點。", "t": ["It", "is", "eight", "o'clock", "."], "d": ["are", "am"]}, {"zh": "今天星期五。", "t": ["It", "is", "Friday", "."], "d": ["are", "friday"]}, {"zh": "外面很冷。", "t": ["It", "is", "cold", "."], "d": ["are", "am"]}], "icon": "🕐", "color": "#e8930a"}, {"name": "日常動作·教室用語", "cat": "溝通功能", "grade": "國小", "qs": [{"zh": "我七點起床。", "t": ["I", "get", "up", "at", "seven", "."], "d": ["gets", "am"]}, {"zh": "他正在跑步。", "t": ["He", "is", "running", "."], "d": ["are", "run"]}, {"zh": "你在做什麼？", "t": ["What", "are", "you", "doing", "?"], "d": ["is", "do"]}, {"zh": "請起立。", "t": ["Stand", "up", "."], "d": ["Stands", "Standing"]}, {"zh": "請坐下。", "t": ["Sit", "down", "."], "d": ["Sits", "Sitting"]}, {"zh": "謝謝你。", "t": ["Thank", "you", "."], "d": ["Thanks you", "Thanking"]}, {"zh": "我們走吧。", "t": ["Let's", "go", "."], "d": ["Lets", "going"]}, {"zh": "她正在讀書。", "t": ["She", "is", "reading", "."], "d": ["are", "read"]}, {"zh": "請打開你的書。", "t": ["Open", "your", "book", "."], "d": ["Opens", "Opening"]}, {"zh": "我在吃午餐。", "t": ["I", "am", "eating", "lunch", "."], "d": ["is", "eat"]}], "icon": "🏫", "color": "#e8930a"}, {"name": "購物與價錢", "cat": "溝通功能", "grade": "國小", "icon": "🛒", "color": "#e8930a", "qs": [{"zh": "這個多少錢？", "t": ["How", "much", "is", "it", "?"], "d": ["many", "are"]}, {"zh": "它是五十元。", "t": ["It", "is", "fifty", "dollars", "."], "d": ["are", "many"]}, {"zh": "它們多少錢？", "t": ["How", "much", "are", "they", "?"], "d": ["is", "many"]}, {"zh": "我想要買一頂帽子。", "t": ["I", "want", "to", "buy", "a", "hat", "."], "d": ["an", "the"]}, {"zh": "這給你。", "t": ["Here", "you", "are", "."], "d": ["is", "am"]}, {"zh": "它是十元。", "t": ["It", "is", "ten", "dollars", "."], "d": ["are", "many"]}, {"zh": "這本書多少錢？", "t": ["How", "much", "is", "the", "book", "?"], "d": ["many", "are"]}, {"zh": "我想要一顆蘋果。", "t": ["I", "want", "an", "apple", "."], "d": ["a", "the"]}, {"zh": "它們是二十元。", "t": ["They", "are", "twenty", "dollars", "."], "d": ["is", "much"]}, {"zh": "這些筆多少錢？", "t": ["How", "much", "are", "the", "pens", "?"], "d": ["is", "many"]}]}, {"name": "問路與方位", "cat": "溝通功能", "grade": "國小", "icon": "🧭", "color": "#e8930a", "qs": [{"zh": "公園在哪裡？", "t": ["Where", "is", "the", "park", "?"], "d": ["are", "at"]}, {"zh": "它在那邊。", "t": ["It", "is", "over", "there", "."], "d": ["are", "here"]}, {"zh": "直直走。", "t": ["Go", "straight", "."], "d": ["turn", "left"]}, {"zh": "左轉。", "t": ["Turn", "left", "."], "d": ["right", "go"]}, {"zh": "右轉。", "t": ["Turn", "right", "."], "d": ["left", "go"]}, {"zh": "它在銀行隔壁。", "t": ["It", "is", "next", "to", "the", "bank", "."], "d": ["behind", "are"]}, {"zh": "它在學校後面。", "t": ["It", "is", "behind", "the", "school", "."], "d": ["next", "in"]}, {"zh": "廁所在哪裡？", "t": ["Where", "is", "the", "bathroom", "?"], "d": ["are", "here"]}, {"zh": "那些商店在哪裡？", "t": ["Where", "are", "the", "shops", "?"], "d": ["is", "there"]}, {"zh": "它在商店附近。", "t": ["It", "is", "near", "the", "store", "."], "d": ["behind", "are"]}]}, {"name": "邀約與客套", "cat": "溝通功能", "grade": "國小", "icon": "🎉", "color": "#e8930a", "qs": [{"zh": "我們走吧。", "t": ["Let's", "go", "."], "d": ["sure", "play"]}, {"zh": "當然好。", "t": ["Sure", "."], "d": ["yes", "okay"]}, {"zh": "我很抱歉。", "t": ["I", "am", "sorry", "."], "d": ["is", "are"]}, {"zh": "不好意思。", "t": ["Excuse", "me", "."], "d": ["you", "sorry"]}, {"zh": "不客氣。", "t": ["You", "are", "welcome", "."], "d": ["is", "am"]}, {"zh": "你想要喝點茶嗎？", "t": ["Would", "you", "like", "some", "tea", "?"], "d": ["do", "a"]}, {"zh": "我們一起玩吧。", "t": ["Let's", "play", "together", "."], "d": ["go", "sure"]}, {"zh": "你想要一片餅乾嗎？", "t": ["Would", "you", "like", "a", "cookie", "?"], "d": ["an", "some"]}, {"zh": "非常謝謝你。", "t": ["Thank", "you", "very", "much", "."], "d": ["welcome", "are"]}, {"zh": "我們去吃午餐吧。", "t": ["Let's", "eat", "lunch", "."], "d": ["go", "play"]}]}]}, {"title": "基礎入門", "color": "#3fb24f", "icon": "🌱", "grade": "七上", "units": [{"name": "Be 動詞直述句", "cat": "句子的分類", "grade": "7上", "qs": [{"zh": "我是學生。", "t": ["I", "am", "a", "student", "."], "d": ["is", "are"]}, {"zh": "她很高。", "t": ["She", "is", "tall", "."], "d": ["am", "are"]}, {"zh": "他們是我的朋友。", "t": ["They", "are", "my", "friends", "."], "d": ["is", "am"]}, {"zh": "這隻狗很小。", "t": ["This", "dog", "is", "small", "."], "d": ["are", "am"]}, {"zh": "你是一位好老師。", "t": ["You", "are", "a", "good", "teacher", "."], "d": ["is", "am"]}, {"zh": "我的爸爸是一位醫生。", "t": ["My", "father", "is", "a", "doctor", "."], "d": ["are", "am"]}, {"zh": "我們今天很開心。", "t": ["We", "are", "happy", "today", "."], "d": ["is", "am"]}, {"zh": "他是我最好的朋友。", "t": ["He", "is", "my", "best", "friend", "."], "d": ["are", "am"]}, {"zh": "這些蘋果是紅色的。", "t": ["These", "apples", "are", "red", "."], "d": ["is", "am"]}, {"zh": "我的老師和我都很忙。", "t": ["My", "teacher", "and", "I", "are", "busy", "."], "d": ["is", "am"]}], "icon": "🟰", "color": "#3fb24f"}, {"name": "名詞複數", "cat": "名詞", "grade": "7上", "qs": [{"zh": "兩隻貓", "t": ["two", "cats"], "d": ["cat"]}, {"zh": "一些書", "t": ["some", "books"], "d": ["book"]}, {"zh": "我有三個盒子。", "t": ["I", "have", "three", "boxes", "."], "d": ["box"]}, {"zh": "我看到很多男孩。", "t": ["I", "see", "many", "boys", "."], "d": ["boy"]}, {"zh": "她有兩隻手錶。", "t": ["She", "has", "two", "watches", "."], "d": ["watch"]}, {"zh": "桌上有一些蘋果。", "t": ["Some", "apples", "are", "on", "the", "table", "."], "d": ["apple"]}, {"zh": "我的書包裡有很多鉛筆。", "t": ["I", "have", "many", "pencils", "in", "my", "bag", "."], "d": ["pencil"]}, {"zh": "公園裡有一些孩子。", "t": ["Some", "children", "are", "in", "the", "park", "."], "d": ["child"]}, {"zh": "這家店賣很多玩具。", "t": ["This", "store", "sells", "many", "toys", "."], "d": ["toy"]}, {"zh": "我的媽媽在廚房洗兩個盤子。", "t": ["My", "mother", "washes", "two", "dishes", "in", "the", "kitchen", "."], "d": ["dish"]}], "icon": "🔢", "color": "#3fb24f"}, {"name": "冠詞 a / an", "cat": "冠詞", "grade": "7上", "qs": [{"zh": "一顆蘋果", "t": ["an", "apple"], "d": ["a"]}, {"zh": "一本書", "t": ["a", "book"], "d": ["an"]}, {"zh": "這是一顆蛋。", "t": ["This", "is", "an", "egg", "."], "d": ["a"]}, {"zh": "他是一位老師。", "t": ["He", "is", "a", "teacher", "."], "d": ["an"]}, {"zh": "我有一把雨傘。", "t": ["I", "have", "an", "umbrella", "."], "d": ["a"]}, {"zh": "她是一位好護士。", "t": ["She", "is", "a", "good", "nurse", "."], "d": ["an"]}, {"zh": "桌上有一顆橘子。", "t": ["There", "is", "an", "orange", "on", "the", "table", "."], "d": ["a"]}, {"zh": "我的爸爸每天吃一顆蘋果。", "t": ["My", "father", "eats", "an", "apple", "every", "day", "."], "d": ["a"]}, {"zh": "我想要一個小時來寫功課。", "t": ["I", "want", "an", "hour", "to", "do", "my", "homework", "."], "d": ["a"]}, {"zh": "我的哥哥是一位很棒的學生。", "t": ["My", "brother", "is", "a", "great", "student", "."], "d": ["an"]}], "icon": "🅰️", "color": "#3fb24f"}, {"name": "指示詞 this / that", "cat": "指示詞", "grade": "7上", "qs": [{"zh": "這是一本書。", "t": ["This", "is", "a", "book", "."], "d": ["These"]}, {"zh": "那是我的貓。", "t": ["That", "is", "my", "cat", "."], "d": ["Those"]}, {"zh": "這些是我的鉛筆。", "t": ["These", "are", "my", "pencils", "."], "d": ["This"]}, {"zh": "那些是他的玩具。", "t": ["Those", "are", "his", "toys", "."], "d": ["That"]}, {"zh": "這是我的新書包。", "t": ["This", "is", "my", "new", "bag", "."], "d": ["These"]}, {"zh": "那些男孩是我的同學。", "t": ["Those", "boys", "are", "my", "classmates", "."], "d": ["That"]}, {"zh": "這些花非常漂亮。", "t": ["These", "flowers", "are", "very", "beautiful", "."], "d": ["This"]}, {"zh": "那是我媽媽的車。", "t": ["That", "is", "my", "mother's", "car", "."], "d": ["Those"]}, {"zh": "這些是我最喜歡的書。", "t": ["These", "are", "my", "favorite", "books", "."], "d": ["This"]}, {"zh": "那些孩子在公園裡玩。", "t": ["Those", "children", "are", "playing", "in", "the", "park", "."], "d": ["That"]}], "icon": "👉", "color": "#3fb24f"}, {"name": "主格代名詞", "cat": "代名詞", "grade": "7上", "qs": [{"zh": "他很高。", "t": ["He", "is", "tall", "."], "d": ["Him"]}, {"zh": "她是我的老師。", "t": ["She", "is", "my", "teacher", "."], "d": ["Her"]}, {"zh": "它是一隻小狗。", "t": ["It", "is", "a", "dog", "."], "d": ["Its"]}, {"zh": "我們是好朋友。", "t": ["We", "are", "good", "friends", "."], "d": ["Us"]}, {"zh": "他們住在台北。", "t": ["They", "live", "in", "Taipei", "."], "d": ["Them"]}, {"zh": "你是一位很棒的歌手。", "t": ["You", "are", "a", "great", "singer", "."], "d": ["Your"]}, {"zh": "他每天走路上學。", "t": ["He", "walks", "to", "school", "every", "day", "."], "d": ["Him"]}, {"zh": "她喜歡在週末讀書。", "t": ["She", "likes", "to", "read", "on", "weekends", "."], "d": ["Her"]}, {"zh": "我們今天下午打籃球。", "t": ["We", "play", "basketball", "this", "afternoon", "."], "d": ["Us"]}, {"zh": "他們每個週日都去公園。", "t": ["They", "go", "to", "the", "park", "every", "Sunday", "."], "d": ["Them"]}], "icon": "🙋", "color": "#3fb24f"}, {"name": "引介句 There is/are", "cat": "引介句", "grade": "7上", "qs": [{"zh": "有一本書。", "t": ["There", "is", "a", "book", "."], "d": ["are"]}, {"zh": "有很多學生。", "t": ["There", "are", "many", "students", "."], "d": ["is"]}, {"zh": "桌上有一顆蘋果。", "t": ["There", "is", "an", "apple", "on", "the", "table", "."], "d": ["are"]}, {"zh": "教室裡有兩位老師。", "t": ["There", "are", "two", "teachers", "in", "the", "classroom", "."], "d": ["is"]}, {"zh": "我的房間裡有一張床。", "t": ["There", "is", "a", "bed", "in", "my", "room", "."], "d": ["are"]}, {"zh": "公園裡有一些孩子。", "t": ["There", "are", "some", "children", "in", "the", "park", "."], "d": ["is"]}, {"zh": "箱子裡有一隻貓。", "t": ["There", "is", "a", "cat", "in", "the", "box", "."], "d": ["are"]}, {"zh": "我的書包裡有很多書。", "t": ["There", "are", "many", "books", "in", "my", "bag", "."], "d": ["is"]}, {"zh": "我家附近有一家商店。", "t": ["There", "is", "a", "store", "near", "my", "home", "."], "d": ["are"]}, {"zh": "牆上有一些漂亮的照片。", "t": ["There", "are", "some", "beautiful", "pictures", "on", "the", "wall", "."], "d": ["is"]}], "icon": "📍", "color": "#3fb24f"}]}, {"title": "一般動詞與問句", "color": "#3aa5e0", "icon": "💬", "grade": "七下", "units": [{"name": "一般動詞直述句", "cat": "句子的分類", "grade": "7下", "qs": [{"zh": "我喜歡音樂。", "t": ["I", "like", "music", "."], "d": ["likes", "am"]}, {"zh": "我們讀書。", "t": ["We", "read", "books", "."], "d": ["reads", "are"]}, {"zh": "他們踢足球。", "t": ["They", "play", "soccer", "."], "d": ["plays", "are"]}, {"zh": "你想要一些水。", "t": ["You", "want", "some", "water", "."], "d": ["wants", "are"]}, {"zh": "我每天喝牛奶。", "t": ["I", "drink", "milk", "every", "day", "."], "d": ["drinks", "am"]}, {"zh": "我們在公園跑步。", "t": ["We", "run", "in", "the", "park", "."], "d": ["runs", "are"]}, {"zh": "他們喜歡他們的老師。", "t": ["They", "like", "their", "teacher", "."], "d": ["likes", "them"]}, {"zh": "我在放學後做我的功課。", "t": ["I", "do", "my", "homework", "after", "school", "."], "d": ["does", "am"]}, {"zh": "我們每天早上吃早餐。", "t": ["We", "eat", "breakfast", "every", "morning", "."], "d": ["eats", "are"]}, {"zh": "他們在週末和朋友玩。", "t": ["They", "play", "with", "friends", "on", "weekends", "."], "d": ["plays", "are"]}], "icon": "🏃", "color": "#3aa5e0"}, {"name": "第三人稱單數", "cat": "時式", "grade": "7下", "qs": [{"zh": "他去上學。", "t": ["He", "goes", "to", "school", "."], "d": ["go", "gos"]}, {"zh": "她喜歡貓。", "t": ["She", "likes", "cats", "."], "d": ["like", "liken"]}, {"zh": "他有一隻狗。", "t": ["He", "has", "a", "dog", "."], "d": ["have", "haves"]}, {"zh": "她看電視。", "t": ["She", "watches", "TV", "."], "d": ["watch", "watchs"]}, {"zh": "他每天讀書。", "t": ["He", "reads", "books", "every", "day", "."], "d": ["read", "reading"]}, {"zh": "她在下午彈鋼琴。", "t": ["She", "plays", "the", "piano", "in", "the", "afternoon", "."], "d": ["play", "played"]}, {"zh": "我的爸爸在一間銀行工作。", "t": ["My", "father", "works", "in", "a", "bank", "."], "d": ["work", "working"]}, {"zh": "他在晚上做他的功課。", "t": ["He", "does", "his", "homework", "in", "the", "evening", "."], "d": ["do", "dos"]}, {"zh": "她每天早上七點吃早餐。", "t": ["She", "eats", "breakfast", "at", "seven", "every", "morning", "."], "d": ["eat", "eating"]}, {"zh": "我的媽媽在星期天洗她的車子。", "t": ["My", "mother", "washes", "her", "car", "on", "Sunday", "."], "d": ["wash", "washs"]}], "icon": "3️⃣", "color": "#3aa5e0"}, {"name": "do / does 問句", "cat": "疑問句", "grade": "7下", "qs": [{"zh": "你喜歡茶嗎？", "t": ["Do", "you", "like", "tea", "?"], "d": ["Does", "Are"]}, {"zh": "他喜歡音樂嗎？", "t": ["Does", "he", "like", "music", "?"], "d": ["Do", "Is"]}, {"zh": "他們踢足球嗎？", "t": ["Do", "they", "play", "soccer", "?"], "d": ["Does", "Are"]}, {"zh": "她有一輛腳踏車嗎？", "t": ["Does", "she", "have", "a", "bike", "?"], "d": ["Do", "Is"]}, {"zh": "你想要一些水嗎？", "t": ["Do", "you", "want", "some", "water", "?"], "d": ["Does", "Are"]}, {"zh": "他每天讀書嗎？", "t": ["Does", "he", "read", "books", "every", "day", "?"], "d": ["Do", "Is"]}, {"zh": "你們在放學後打籃球嗎？", "t": ["Do", "you", "play", "basketball", "after", "school", "?"], "d": ["Does", "Are"]}, {"zh": "她在晚上看電視嗎？", "t": ["Does", "she", "watch", "TV", "in", "the", "evening", "?"], "d": ["Do", "Is"]}, {"zh": "他們在星期日打掃他們的房間嗎？", "t": ["Do", "they", "clean", "their", "room", "on", "Sunday", "?"], "d": ["Does", "Are"]}, {"zh": "你的哥哥每天早上走路上學嗎？", "t": ["Does", "your", "brother", "walk", "to", "school", "every", "morning", "?"], "d": ["Do", "Is"]}], "icon": "❓", "color": "#3aa5e0"}, {"name": "WH 問句", "cat": "疑問句", "grade": "7下", "qs": [{"zh": "你想要什麼？", "t": ["What", "do", "you", "want", "?"], "d": ["Where", "does"]}, {"zh": "他住在哪裡？", "t": ["Where", "does", "he", "live", "?"], "d": ["What", "do"]}, {"zh": "那個男孩是誰？", "t": ["Who", "is", "that", "boy", "?"], "d": ["What", "are"]}, {"zh": "你什麼時候起床？", "t": ["When", "do", "you", "get", "up", "?"], "d": ["Where", "does"]}, {"zh": "她如何去上學？", "t": ["How", "does", "she", "go", "to", "school", "?"], "d": ["What", "do"]}, {"zh": "你的爸爸做什麼工作？", "t": ["What", "does", "your", "father", "do", "?"], "d": ["Where", "did"]}, {"zh": "你放學後去哪裡？", "t": ["Where", "do", "you", "go", "after", "school", "?"], "d": ["What", "does"]}, {"zh": "你幾點吃晚餐？", "t": ["What", "time", "do", "you", "eat", "dinner", "?"], "d": ["When", "does"]}, {"zh": "他們在週末做什麼？", "t": ["What", "do", "they", "do", "on", "weekends", "?"], "d": ["Where", "does"]}, {"zh": "你的媽媽每天早上什麼時候上班？", "t": ["When", "does", "your", "mother", "go", "to", "work", "every", "morning", "?"], "d": ["Where", "do"]}], "icon": "🔍", "color": "#3aa5e0"}, {"name": "受格與所有格", "cat": "代名詞", "grade": "7下", "qs": [{"zh": "我喜歡他。", "t": ["I", "like", "him", "."], "d": ["he", "his"]}, {"zh": "她認識我。", "t": ["She", "knows", "me", "."], "d": ["I", "my"]}, {"zh": "這是我的書。", "t": ["This", "is", "my", "book", "."], "d": ["I", "me"]}, {"zh": "我們幫助他們。", "t": ["We", "help", "them", "."], "d": ["they", "their"]}, {"zh": "他愛他的家人。", "t": ["He", "loves", "his", "family", "."], "d": ["him", "he"]}, {"zh": "她和我們一起玩。", "t": ["She", "plays", "with", "us", "."], "d": ["we", "our"]}, {"zh": "他們喜歡他們的老師。", "t": ["They", "like", "their", "teacher", "."], "d": ["them", "they"]}, {"zh": "我媽媽每天叫我起床。", "t": ["My", "mother", "wakes", "me", "up", "every", "day", "."], "d": ["I", "my"]}, {"zh": "這位男孩帶他的狗去公園。", "t": ["This", "boy", "takes", "his", "dog", "to", "the", "park", "."], "d": ["him", "he"]}, {"zh": "我們的老師在課堂後幫助我們。", "t": ["Our", "teacher", "helps", "us", "after", "class", "."], "d": ["we", "they"]}], "icon": "🙋‍♂️", "color": "#3aa5e0"}, {"name": "頻率副詞與介詞", "cat": "副詞", "grade": "7下", "qs": [{"zh": "我總是很快樂。", "t": ["I", "am", "always", "happy", "."], "d": ["at", "on"]}, {"zh": "他常常遲到。", "t": ["He", "is", "often", "late", "."], "d": ["in", "at"]}, {"zh": "我們在七點吃晚餐。", "t": ["We", "eat", "dinner", "at", "seven", "."], "d": ["on", "in"]}, {"zh": "她通常在早上讀書。", "t": ["She", "usually", "reads", "in", "the", "morning", "."], "d": ["at", "on"]}, {"zh": "他們在星期天踢足球。", "t": ["They", "play", "soccer", "on", "Sunday", "."], "d": ["in", "at"]}, {"zh": "我總是在晚上做我的功課。", "t": ["I", "always", "do", "my", "homework", "at", "night", "."], "d": ["in", "on"]}, {"zh": "我媽媽常常在廚房煮飯。", "t": ["My", "mother", "often", "cooks", "in", "the", "kitchen", "."], "d": ["at", "on"]}, {"zh": "我們通常在星期六去公園。", "t": ["We", "usually", "go", "to", "the", "park", "on", "Saturday", "."], "d": ["in", "at"]}, {"zh": "他總是在夏天游泳。", "t": ["He", "always", "swims", "in", "the", "summer", "."], "d": ["at", "on"]}, {"zh": "她通常在晚上在家看電視。", "t": ["She", "usually", "watches", "TV", "at", "home", "at", "night", "."], "d": ["in", "on"]}], "icon": "⏰", "color": "#3aa5e0"}, {"name": "數量詞 some/any/many/much", "cat": "數量詞", "grade": "7下", "icon": "🔢", "color": "#3aa5e0", "qs": [{"zh": "我有一些書。", "t": ["I", "have", "some", "books", "."], "d": ["any", "much"]}, {"zh": "你有任何錢嗎？", "t": ["Do", "you", "have", "any", "money", "?"], "d": ["some", "many"]}, {"zh": "桌上有許多蘋果。", "t": ["There", "are", "many", "apples", "on", "the", "table", "."], "d": ["much", "any"]}, {"zh": "我沒有很多時間。", "t": ["I", "don't", "have", "much", "time", "."], "d": ["many", "some"]}, {"zh": "她想要一些水。", "t": ["She", "wants", "some", "water", "."], "d": ["any", "many"]}, {"zh": "冰箱裡沒有任何牛奶。", "t": ["There", "isn't", "any", "milk", "in", "the", "fridge", "."], "d": ["some", "much"]}, {"zh": "公園裡有許多孩子。", "t": ["There", "are", "many", "children", "in", "the", "park", "."], "d": ["much", "any"]}, {"zh": "我在盒子裡放了一些糖。", "t": ["I", "put", "some", "sugar", "in", "the", "box", "."], "d": ["any", "many"]}, {"zh": "這個城市裡沒有很多雨。", "t": ["There", "isn't", "much", "rain", "in", "this", "city", "."], "d": ["many", "some"]}, {"zh": "你今天有太多功課要做嗎？", "t": ["Do", "you", "have", "too", "much", "homework", "to", "do", "today", "?"], "d": ["many", "any"]}]}, {"name": "基數與序數", "cat": "數量詞", "grade": "7下", "icon": "🔢", "color": "#3aa5e0", "qs": [{"zh": "我有兩隻貓。", "t": ["I", "have", "two", "cats", "."], "d": ["second", "one"]}, {"zh": "他是第一個。", "t": ["He", "is", "the", "first", "."], "d": ["one", "three"]}, {"zh": "我看到三隻鳥。", "t": ["I", "see", "three", "birds", "."], "d": ["third", "first"]}, {"zh": "她住在第二層樓。", "t": ["She", "lives", "on", "the", "second", "floor", "."], "d": ["two", "first"]}, {"zh": "今天是我的第一天。", "t": ["Today", "is", "my", "first", "day", "."], "d": ["one", "second"]}, {"zh": "我們班上有四個女孩。", "t": ["There", "are", "four", "girls", "in", "our", "class", "."], "d": ["fourth", "first"]}, {"zh": "這是我第三次來這裡。", "t": ["This", "is", "my", "third", "time", "here", "."], "d": ["three", "two"]}, {"zh": "他在比賽中得到第一名。", "t": ["He", "got", "the", "first", "place", "in", "the", "race", "."], "d": ["one", "third"]}, {"zh": "我買了五本書給我的朋友。", "t": ["I", "bought", "five", "books", "for", "my", "friends", "."], "d": ["fifth", "first"]}, {"zh": "她的生日是在十二月的第一天。", "t": ["Her", "birthday", "is", "on", "the", "first", "day", "of", "December", "."], "d": ["one", "two"]}]}]}, {"title": "進行式與過去式", "color": "#fb8c2b", "icon": "⏳", "grade": "八上", "units": [{"name": "現在進行式", "cat": "時式", "grade": "8上", "qs": [{"zh": "我正在看書。", "t": ["I", "am", "reading", "a", "book", "."], "d": ["read", "is"]}, {"zh": "她正在唱歌。", "t": ["She", "is", "singing", "now", "."], "d": ["sing", "are"]}, {"zh": "他們正在踢足球。", "t": ["They", "are", "playing", "soccer", "."], "d": ["play", "is"]}, {"zh": "我的貓正在睡覺。", "t": ["My", "cat", "is", "sleeping", "now", "."], "d": ["sleep", "are"]}, {"zh": "我們正在寫作業。", "t": ["We", "are", "doing", "our", "homework", "."], "d": ["do", "is"]}, {"zh": "那個男孩正在河裡游泳。", "t": ["The", "boy", "is", "swimming", "in", "the", "river", "."], "d": ["swim", "are"]}, {"zh": "我媽媽正在廚房裡煮飯。", "t": ["My", "mother", "is", "cooking", "in", "the", "kitchen", "."], "d": ["cook", "are"]}, {"zh": "孩子們現在正在公園裡玩耍。", "t": ["The", "children", "are", "playing", "in", "the", "park", "now", "."], "d": ["play", "is"]}, {"zh": "我爸爸正在客廳裡看電視。", "t": ["My", "father", "is", "watching", "TV", "in", "the", "living", "room", "."], "d": ["watch", "are"]}, {"zh": "我的朋友們現在正在為考試讀書。", "t": ["My", "friends", "are", "studying", "for", "the", "test", "now", "."], "d": ["study", "is"]}], "icon": "🎬", "color": "#fb8c2b"}, {"name": "情態助動詞 can/should", "cat": "助動詞", "grade": "8上", "qs": [{"zh": "我會游泳。", "t": ["I", "can", "swim", "."], "d": ["swimming", "cans"]}, {"zh": "你應該早睡。", "t": ["You", "should", "sleep", "early", "."], "d": ["sleeping", "shoulds"]}, {"zh": "她不會開車。", "t": ["She", "can't", "drive", "a", "car", "."], "d": ["driving", "cans"]}, {"zh": "我們應該多喝水。", "t": ["We", "should", "drink", "more", "water", "."], "d": ["drinking", "shoulds"]}, {"zh": "他能跑得很快。", "t": ["He", "can", "run", "very", "fast", "."], "d": ["running", "cans"]}, {"zh": "你應該對你媽媽好一點。", "t": ["You", "should", "be", "nice", "to", "your", "mother", "."], "d": ["being", "shoulds"]}, {"zh": "我不會說法文。", "t": ["I", "can't", "speak", "French", "very", "well", "."], "d": ["speaking", "cans"]}, {"zh": "學生應該在課堂上專心聽講。", "t": ["Students", "should", "listen", "in", "class", "."], "d": ["listening", "shoulds"]}, {"zh": "你能幫我搬這張桌子嗎？", "t": ["Can", "you", "help", "me", "move", "this", "table", "?"], "d": ["helping", "cans"]}, {"zh": "我們生病的時候應該多休息。", "t": ["We", "should", "take", "a", "good", "rest", "when", "we", "are", "sick", "."], "d": ["taking", "shoulds"]}], "icon": "💪", "color": "#fb8c2b"}, {"name": "was / were", "cat": "時式", "grade": "8上", "qs": [{"zh": "我以前很矮。", "t": ["I", "was", "short", "."], "d": ["were", "am"]}, {"zh": "他們昨天很累。", "t": ["They", "were", "tired", "yesterday", "."], "d": ["was", "are"]}, {"zh": "她昨天不在家。", "t": ["She", "was", "not", "at", "home", "."], "d": ["were", "is"]}, {"zh": "我們去年在同一班。", "t": ["We", "were", "in", "the", "same", "class", "."], "d": ["was", "are"]}, {"zh": "那部電影很無聊。", "t": ["The", "movie", "was", "very", "boring", "."], "d": ["were", "is"]}, {"zh": "你昨天在圖書館嗎？", "t": ["Were", "you", "in", "the", "library", "yesterday", "?"], "d": ["Was", "Are"]}, {"zh": "那些蘋果不新鮮。", "t": ["Those", "apples", "were", "not", "fresh", "."], "d": ["was", "are"]}, {"zh": "上週天氣又冷又下雨。", "t": ["The", "weather", "was", "cold", "and", "rainy", "last", "week", "."], "d": ["were", "is"]}, {"zh": "孩子們昨晚在派對上很開心。", "t": ["The", "children", "were", "happy", "at", "the", "party", "last", "night", "."], "d": ["was", "are"]}, {"zh": "我小的時候，我的祖父母很健康。", "t": ["My", "grandparents", "were", "healthy", "when", "I", "was", "young", "."], "d": ["are", "is"]}], "icon": "🕐", "color": "#fb8c2b"}, {"name": "過去簡單式", "cat": "時式", "grade": "8上", "qs": [{"zh": "我昨天去了學校。", "t": ["I", "went", "to", "school", "yesterday", "."], "d": ["go", "goed"]}, {"zh": "她看見一隻鳥。", "t": ["She", "saw", "a", "bird", "."], "d": ["see", "seed"]}, {"zh": "我們昨晚吃了披薩。", "t": ["We", "ate", "pizza", "last", "night", "."], "d": ["eat", "eated"]}, {"zh": "他打掃了他的房間。", "t": ["He", "cleaned", "his", "room", "."], "d": ["clean", "cleen"]}, {"zh": "我昨天買了一本新書。", "t": ["I", "bought", "a", "new", "book", "yesterday", "."], "d": ["buy", "buyed"]}, {"zh": "他們上週看了那部電影。", "t": ["They", "watched", "the", "movie", "last", "week", "."], "d": ["watch", "watchs"]}, {"zh": "她昨天做了美味的晚餐。", "t": ["She", "made", "a", "nice", "dinner", "last", "night", "."], "d": ["make", "maked"]}, {"zh": "我們上個週末去了海邊。", "t": ["We", "went", "to", "the", "beach", "last", "weekend", "."], "d": ["go", "goed"]}, {"zh": "我今天早上吃了一顆蛋當早餐。", "t": ["I", "had", "an", "egg", "for", "breakfast", "this", "morning", "."], "d": ["have", "haved"]}, {"zh": "昨天下午我的朋友在公園遇見了一位老師。", "t": ["My", "friend", "saw", "a", "teacher", "in", "the", "park", "yesterday", "."], "d": ["see", "seed"]}], "icon": "⏮️", "color": "#fb8c2b"}, {"name": "過去進行式", "cat": "時式", "grade": "8上", "qs": [{"zh": "我當時正在看書。", "t": ["I", "was", "reading", "a", "book", "."], "d": ["were", "am"]}, {"zh": "他們當時正在唱歌。", "t": ["They", "were", "singing", "together", "."], "d": ["was", "are"]}, {"zh": "她當時正在打電話。", "t": ["She", "was", "talking", "on", "the", "phone", "."], "d": ["were", "is"]}, {"zh": "我們當時正在看電視。", "t": ["We", "were", "watching", "TV", "then", "."], "d": ["was", "are"]}, {"zh": "那個男孩當時正在河裡游泳。", "t": ["The", "boy", "was", "swimming", "in", "the", "river", "."], "d": ["were", "is"]}, {"zh": "當時我媽媽正在廚房裡煮飯。", "t": ["My", "mother", "was", "cooking", "in", "the", "kitchen", "."], "d": ["were", "is"]}, {"zh": "昨晚八點時他們正在看電影。", "t": ["They", "were", "watching", "a", "movie", "at", "eight", "last", "night", "."], "d": ["was", "are"]}, {"zh": "你打電話給我時我正在洗澡。", "t": ["I", "was", "taking", "a", "shower", "when", "you", "called", "."], "d": ["were", "am"]}, {"zh": "下雨時孩子們正在公園裡玩耍。", "t": ["The", "children", "were", "playing", "in", "the", "park", "when", "it", "rained", "."], "d": ["was", "are"]}, {"zh": "我昨天看到她時，她正走向學校。", "t": ["She", "was", "walking", "to", "school", "when", "I", "saw", "her", "."], "d": ["were", "is"]}], "icon": "📽️", "color": "#fb8c2b"}, {"name": "祈使句與感嘆句", "cat": "句子的分類", "grade": "8上", "qs": [{"zh": "請坐下。", "t": ["Sit", "down", "please", "."], "d": ["Sitting", "You"]}, {"zh": "別跑。", "t": ["Don't", "run", "."], "d": ["Not", "running"]}, {"zh": "多美的一天啊！", "t": ["What", "a", "nice", "day", "!"], "d": ["How", "Very"]}, {"zh": "打開窗戶。", "t": ["Open", "the", "window", "please", "."], "d": ["Opening", "Opens"]}, {"zh": "上課別說話。", "t": ["Don't", "talk", "in", "class", "."], "d": ["Not", "talking"]}, {"zh": "她跑得多快啊！", "t": ["How", "fast", "she", "runs", "!"], "d": ["What", "Very"]}, {"zh": "請小心過馬路。", "t": ["Please", "cross", "the", "street", "carefully", "."], "d": ["Crossing", "Crosses"]}, {"zh": "這是多麼有趣的一個故事啊！", "t": ["What", "an", "interesting", "story", "this", "is", "!"], "d": ["How", "Very"]}, {"zh": "別忘了帶你的雨傘。", "t": ["Don't", "forget", "to", "bring", "your", "umbrella", "."], "d": ["Not", "forgetting"]}, {"zh": "這些花好漂亮啊！", "t": ["How", "beautiful", "these", "flowers", "are", "!"], "d": ["What", "Very"]}], "icon": "❗", "color": "#fb8c2b"}, {"name": "too 與 either", "cat": "副詞", "grade": "8上", "icon": "➕", "color": "#fb8c2b", "qs": [{"zh": "我也喜歡它。", "t": ["I", "like", "it", "too", "."], "d": ["either", "also"]}, {"zh": "我也不喜歡它。", "t": ["I", "don't", "like", "it", "either", "."], "d": ["too", "neither"]}, {"zh": "他也很高。", "t": ["He", "is", "tall", "too", "."], "d": ["either", "so"]}, {"zh": "她也不累。", "t": ["She", "isn't", "tired", "either", "."], "d": ["too", "neither"]}, {"zh": "我們也想去。", "t": ["We", "want", "to", "go", "too", "."], "d": ["either", "also"]}, {"zh": "他們也不會來。", "t": ["They", "won't", "come", "either", "."], "d": ["too", "neither"]}, {"zh": "我也愛看電影。", "t": ["I", "love", "movies", "too", "."], "d": ["either", "also"]}, {"zh": "我的哥哥也不會游泳。", "t": ["My", "brother", "can't", "swim", "either", "."], "d": ["too", "neither"]}, {"zh": "我媽媽也喜歡這首歌。", "t": ["My", "mother", "likes", "this", "song", "too", "."], "d": ["either", "also"]}, {"zh": "我的朋友們也不喜歡這部電影。", "t": ["My", "friends", "don't", "like", "this", "movie", "either", "."], "d": ["too", "also"]}]}, {"name": "have to 必須", "cat": "助動詞", "grade": "8上", "icon": "✔️", "color": "#fb8c2b", "qs": [{"zh": "我必須走了。", "t": ["I", "have", "to", "go", "."], "d": ["has", "having"]}, {"zh": "她必須讀書。", "t": ["She", "has", "to", "study", "."], "d": ["have", "having"]}, {"zh": "你不必來。", "t": ["You", "don't", "have", "to", "come", "."], "d": ["has", "doesn't"]}, {"zh": "他必須早起。", "t": ["He", "has", "to", "get", "up", "early", "."], "d": ["have", "having"]}, {"zh": "我們必須做我們的功課。", "t": ["We", "have", "to", "do", "our", "homework", "."], "d": ["has", "having"]}, {"zh": "他不必工作。", "t": ["He", "doesn't", "have", "to", "work", "."], "d": ["don't", "has"]}, {"zh": "我妹妹必須在七點前上床睡覺。", "t": ["My", "sister", "has", "to", "go", "to", "bed", "before", "seven", "."], "d": ["have", "having"]}, {"zh": "學生們必須聽老師的話。", "t": ["Students", "have", "to", "listen", "to", "the", "teacher", "."], "d": ["has", "having"]}, {"zh": "你今天必須打掃你的房間嗎？", "t": ["Do", "you", "have", "to", "clean", "your", "room", "today", "?"], "d": ["has", "does"]}, {"zh": "我的爸爸每天必須開車去上班。", "t": ["My", "father", "has", "to", "drive", "to", "work", "every", "day", "."], "d": ["have", "having"]}]}, {"name": "其他情態助動詞", "cat": "助動詞", "grade": "8上", "icon": "🤔", "color": "#fb8c2b", "qs": [{"zh": "你必須現在走。", "t": ["You", "must", "go", "now", "."], "d": ["musts", "goes"]}, {"zh": "他可能是對的。", "t": ["He", "may", "be", "right", "."], "d": ["mays", "to"]}, {"zh": "那可能是真的。", "t": ["That", "could", "be", "true", "."], "d": ["coulds", "to"]}, {"zh": "我可以借你的筆嗎？", "t": ["May", "I", "borrow", "your", "pen", "?"], "d": ["borrows", "to"]}, {"zh": "她今天可能不會來。", "t": ["She", "might", "not", "come", "today", "."], "d": ["mights", "to"]}, {"zh": "你不可以在這裡停車。", "t": ["You", "must", "not", "park", "here", "."], "d": ["musts", "parks"]}, {"zh": "我可以問你一個問題嗎？", "t": ["Could", "I", "ask", "you", "a", "question", "?"], "d": ["asks", "to"]}, {"zh": "你明天必須完成這份作業。", "t": ["You", "must", "finish", "this", "homework", "tomorrow", "."], "d": ["musts", "finishes"]}, {"zh": "她可能已經知道這個消息了。", "t": ["She", "may", "already", "know", "the", "news", "."], "d": ["mays", "to"]}, {"zh": "我們今晚可能會去看電影。", "t": ["We", "might", "go", "to", "the", "movies", "tonight", "."], "d": ["mights", "goes"]}]}]}, {"title": "未來式與比較", "color": "#7b5cf0", "icon": "🚀", "grade": "八下", "units": [{"name": "未來式 will / be going to", "cat": "時式", "grade": "8下", "qs": [{"zh": "我明天會去學校。", "t": ["I", "will", "go", "to", "school", "tomorrow", "."], "d": ["going", "goes"]}, {"zh": "她會打電話給你。", "t": ["She", "will", "call", "you", "."], "d": ["calls", "calling"]}, {"zh": "我要去看電影。", "t": ["I", "am", "going", "to", "watch", "a", "movie", "."], "d": ["will", "watches"]}, {"zh": "我們明天會很忙。", "t": ["We", "will", "be", "busy", "tomorrow", "."], "d": ["are", "being"]}, {"zh": "他不會遲到。", "t": ["He", "will", "not", "be", "late", "."], "d": ["is", "won't"]}, {"zh": "他們要打籃球。", "t": ["They", "are", "going", "to", "play", "basketball", "."], "d": ["will", "playing"]}, {"zh": "你明天會做什麼？", "t": ["What", "will", "you", "do", "tomorrow", "?"], "d": ["are", "doing"]}, {"zh": "我下週會拜訪我的祖母。", "t": ["I", "will", "visit", "my", "grandmother", "next", "week", "."], "d": ["visiting", "am"]}, {"zh": "她要為考試讀書。", "t": ["She", "is", "going", "to", "study", "for", "the", "test", "."], "d": ["will", "studies"]}, {"zh": "我想我們明天會贏得比賽。", "t": ["I", "think", "we", "will", "win", "the", "game", "tomorrow", "."], "d": ["winning", "wins"]}], "icon": "🚀", "color": "#7b5cf0"}, {"name": "形容詞比較級", "cat": "形容詞", "grade": "8下", "qs": [{"zh": "這個包包比較大。", "t": ["This", "bag", "is", "bigger", "."], "d": ["big", "more"]}, {"zh": "他比我高。", "t": ["He", "is", "taller", "than", "me", "."], "d": ["tall", "more"]}, {"zh": "我的房間比你的乾淨。", "t": ["My", "room", "is", "cleaner", "than", "yours", "."], "d": ["clean", "more"]}, {"zh": "這本書比那本有趣。", "t": ["This", "book", "is", "more", "interesting", "than", "that", "one", "."], "d": ["interestinger"]}, {"zh": "今天比昨天熱。", "t": ["Today", "is", "hotter", "than", "yesterday", "."], "d": ["hot", "more"]}, {"zh": "他跑得比我快。", "t": ["He", "runs", "faster", "than", "I", "do", "."], "d": ["fast", "more"]}, {"zh": "這部電影比那部好。", "t": ["This", "movie", "is", "better", "than", "that", "one", "."], "d": ["gooder", "more"]}, {"zh": "今天天氣比較糟。", "t": ["The", "weather", "is", "worse", "today", "."], "d": ["bader", "worst"]}, {"zh": "英語對我來說比數學難。", "t": ["English", "is", "more", "difficult", "than", "math", "for", "me", "."], "d": ["difficulter"]}, {"zh": "我想騎腳踏車比走路快。", "t": ["I", "think", "riding", "a", "bike", "is", "faster", "than", "walking", "."], "d": ["fast", "more"]}], "icon": "📈", "color": "#7b5cf0"}, {"name": "形容詞最高級", "cat": "形容詞", "grade": "8下", "qs": [{"zh": "他是最高的。", "t": ["He", "is", "the", "tallest", "."], "d": ["taller", "most"]}, {"zh": "這是最大的房間。", "t": ["This", "is", "the", "biggest", "room", "."], "d": ["bigger", "most"]}, {"zh": "她是班上最聰明的。", "t": ["She", "is", "the", "smartest", "in", "class", "."], "d": ["smarter", "most"]}, {"zh": "這是最好的餐廳。", "t": ["This", "is", "the", "best", "restaurant", "."], "d": ["goodest", "most"]}, {"zh": "那是最有趣的電影。", "t": ["That", "is", "the", "most", "interesting", "movie", "."], "d": ["interestingest"]}, {"zh": "這是我最糟的一天。", "t": ["This", "is", "the", "worst", "day", "for", "me", "."], "d": ["baddest", "most"]}, {"zh": "他是我們隊上跑最快的。", "t": ["He", "is", "the", "fastest", "runner", "on", "our", "team", "."], "d": ["faster", "most"]}, {"zh": "這是店裡最貴的東西。", "t": ["This", "is", "the", "most", "expensive", "thing", "in", "the", "shop", "."], "d": ["expensivest"]}, {"zh": "英語是我最喜歡的科目。", "t": ["English", "is", "my", "favorite", "subject", "."], "d": ["favoriter", "most"]}, {"zh": "我想這是城裡最漂亮的公園。", "t": ["I", "think", "this", "is", "the", "most", "beautiful", "park", "in", "town", "."], "d": ["beautifulest"]}], "icon": "🏆", "color": "#7b5cf0"}, {"name": "不定詞 to V", "cat": "不定詞", "grade": "8下", "qs": [{"zh": "我想睡覺。", "t": ["I", "want", "to", "sleep", "."], "d": ["sleeping", "sleeps"]}, {"zh": "她喜歡唱歌。", "t": ["She", "likes", "to", "sing", "."], "d": ["singing", "sings"]}, {"zh": "我需要買一些牛奶。", "t": ["I", "need", "to", "buy", "some", "milk", "."], "d": ["buying", "buys"]}, {"zh": "他想成為一位老師。", "t": ["He", "wants", "to", "be", "a", "teacher", "."], "d": ["being", "is"]}, {"zh": "讀書很重要。", "t": ["It", "is", "important", "to", "study", "."], "d": ["studying", "studies"]}, {"zh": "我們決定在家待著。", "t": ["We", "decided", "to", "stay", "home", "."], "d": ["staying", "stayed"]}, {"zh": "她想學游泳。", "t": ["She", "wants", "to", "learn", "to", "swim", "."], "d": ["swimming", "learning"]}, {"zh": "幫助別人很好。", "t": ["It", "is", "nice", "to", "help", "others", "."], "d": ["helping", "helps"]}, {"zh": "我需要更多時間去完成它。", "t": ["I", "need", "more", "time", "to", "finish", "it", "."], "d": ["finishing", "finishes"]}, {"zh": "每天早起很難。", "t": ["It", "is", "hard", "to", "get", "up", "early", "every", "day", "."], "d": ["getting", "gets"]}], "icon": "🎯", "color": "#7b5cf0"}, {"name": "動名詞 V-ing", "cat": "動名詞", "grade": "8下", "qs": [{"zh": "我喜歡閱讀。", "t": ["I", "enjoy", "reading", "."], "d": ["read", "to"]}, {"zh": "她喜歡跳舞。", "t": ["She", "likes", "dancing", "."], "d": ["dance", "to"]}, {"zh": "游泳很有趣。", "t": ["Swimming", "is", "fun", "."], "d": ["Swim", "To"]}, {"zh": "他做完他的功課了。", "t": ["He", "finished", "doing", "his", "homework", "."], "d": ["do", "to"]}, {"zh": "我喜歡跟朋友玩。", "t": ["I", "enjoy", "playing", "with", "my", "friends", "."], "d": ["play", "to"]}, {"zh": "讀英語很有用。", "t": ["Reading", "English", "is", "useful", "."], "d": ["Read", "To"]}, {"zh": "她做完煮晚餐了。", "t": ["She", "finished", "cooking", "dinner", "."], "d": ["cook", "to"]}, {"zh": "他們喜歡看電視。", "t": ["They", "enjoy", "watching", "TV", "."], "d": ["watch", "to"]}, {"zh": "早起對你有好處。", "t": ["Getting", "up", "early", "is", "good", "for", "you", "."], "d": ["Get", "To"]}, {"zh": "我朋友喜歡在公園騎腳踏車。", "t": ["My", "friend", "likes", "riding", "a", "bike", "in", "the", "park", "."], "d": ["ride", "to"]}], "icon": "🎨", "color": "#7b5cf0"}, {"name": "連接詞 and/but/because", "cat": "連接詞", "grade": "8下", "qs": [{"zh": "他又高又壯。", "t": ["He", "is", "tall", "and", "strong", "."], "d": ["but", "because"]}, {"zh": "我累了，但我很開心。", "t": ["I", "am", "tired", "but", "happy", "."], "d": ["and", "because"]}, {"zh": "她喜歡貓和狗。", "t": ["She", "likes", "cats", "and", "dogs", "."], "d": ["but", "so"]}, {"zh": "下雨了，所以我們待在家。", "t": ["It", "rained", ",", "so", "we", "stayed", "home", "."], "d": ["but", "because"]}, {"zh": "我很累，因為我工作到很晚。", "t": ["I", "am", "tired", "because", "I", "worked", "late", "."], "d": ["so", "but"]}, {"zh": "他想去，但他很忙。", "t": ["He", "wants", "to", "go", ",", "but", "he", "is", "busy", "."], "d": ["and", "because"]}, {"zh": "我們待在家，因為天氣很糟。", "t": ["We", "stayed", "home", "because", "the", "weather", "was", "bad", "."], "d": ["so", "but"]}, {"zh": "她讀書認真，所以她通過了考試。", "t": ["She", "studied", "hard", ",", "so", "she", "passed", "the", "test", "."], "d": ["but", "because"]}, {"zh": "我喜歡英語，但我不喜歡數學。", "t": ["I", "like", "English", ",", "but", "I", "don't", "like", "math", "."], "d": ["and", "because"]}, {"zh": "他早睡，因為他很累。", "t": ["He", "went", "to", "bed", "early", "because", "he", "was", "tired", "."], "d": ["so", "but"]}], "icon": "🔗", "color": "#7b5cf0"}, {"name": "所有格代名詞", "cat": "代名詞", "grade": "8下", "icon": "🙋", "color": "#7b5cf0", "qs": [{"zh": "這是我的。", "t": ["This", "is", "mine", "."], "d": ["my", "me"]}, {"zh": "那是你的。", "t": ["That", "is", "yours", "."], "d": ["your", "you"]}, {"zh": "這本書是他的。", "t": ["This", "book", "is", "his", "."], "d": ["him", "her"]}, {"zh": "那支筆是她的。", "t": ["That", "pen", "is", "hers", "."], "d": ["her", "she"]}, {"zh": "這間房子是我們的。", "t": ["This", "house", "is", "ours", "."], "d": ["our", "us"]}, {"zh": "那些包包是他們的。", "t": ["Those", "bags", "are", "theirs", "."], "d": ["their", "them"]}, {"zh": "這輛紅色的腳踏車是我的。", "t": ["This", "red", "bike", "is", "mine", "."], "d": ["my", "me"]}, {"zh": "桌上的那些鑰匙是你的。", "t": ["The", "keys", "on", "the", "table", "are", "yours", "."], "d": ["your", "you"]}, {"zh": "這隻狗是她的，不是他的。", "t": ["This", "dog", "is", "hers", ",", "not", "his", "."], "d": ["her", "him"]}, {"zh": "這些新的手機是我們的，不是他們的。", "t": ["These", "new", "phones", "are", "ours", ",", "not", "theirs", "."], "d": ["our", "their"]}]}, {"name": "授與動詞 give/buy 人+物", "cat": "其他句型", "grade": "8下", "icon": "🎁", "color": "#7b5cf0", "qs": [{"zh": "給我那本書。", "t": ["Give", "me", "the", "book", "."], "d": ["to", "for"]}, {"zh": "他給我一支筆。", "t": ["He", "gave", "me", "a", "pen", "."], "d": ["to", "for"]}, {"zh": "她買給我一份禮物。", "t": ["She", "bought", "me", "a", "gift", "."], "d": ["to", "for"]}, {"zh": "請把你的照片給我看。", "t": ["Please", "show", "me", "your", "photos", "."], "d": ["to", "for"]}, {"zh": "告訴我你的名字。", "t": ["Tell", "me", "your", "name", "."], "d": ["to", "for"]}, {"zh": "我媽媽買給我一輛新腳踏車。", "t": ["My", "mother", "bought", "me", "a", "new", "bike", "."], "d": ["to", "for"]}, {"zh": "我的老師給了我們許多功課。", "t": ["My", "teacher", "gave", "us", "a", "lot", "of", "homework", "."], "d": ["to", "for"]}, {"zh": "他向我們展示了他的新玩具。", "t": ["He", "showed", "us", "his", "new", "toy", "."], "d": ["to", "for"]}, {"zh": "我的爸爸買給我妹妹一件漂亮的洋裝。", "t": ["My", "father", "bought", "my", "sister", "a", "pretty", "dress", "."], "d": ["to", "for"]}, {"zh": "我的朋友給了我一張生日卡片。", "t": ["My", "friend", "gave", "me", "a", "birthday", "card", "."], "d": ["to", "for"]}]}, {"name": "反身代名詞", "cat": "代名詞", "grade": "8下", "icon": "🙋", "color": "#7b5cf0", "qs": [{"zh": "我自己做。", "t": ["I", "do", "it", "myself", "."], "d": ["me", "mine"]}, {"zh": "照顧你自己。", "t": ["Take", "care", "of", "yourself", "."], "d": ["you", "your"]}, {"zh": "他自己畫了它。", "t": ["He", "drew", "it", "himself", "."], "d": ["his", "him"]}, {"zh": "她自己煮晚餐。", "t": ["She", "cooks", "dinner", "herself", "."], "d": ["her", "hers"]}, {"zh": "我們自己打掃教室。", "t": ["We", "clean", "the", "classroom", "ourselves", "."], "d": ["us", "our"]}, {"zh": "他們自己蓋了那間房子。", "t": ["They", "built", "the", "house", "themselves", "."], "d": ["them", "their"]}, {"zh": "請自便享用食物。", "t": ["Please", "help", "yourself", "to", "the", "food", "."], "d": ["you", "yours"]}, {"zh": "這隻貓正在舔自己。", "t": ["The", "cat", "is", "licking", "itself", "."], "d": ["it", "its"]}, {"zh": "我昨天不小心割傷了自己。", "t": ["I", "cut", "myself", "by", "accident", "yesterday", "."], "d": ["me", "mine"]}, {"zh": "孩子們獨自玩得很開心。", "t": ["The", "children", "enjoyed", "themselves", "at", "the", "party", "alone", "."], "d": ["them", "their"]}]}, {"name": "原級比較 as...as", "cat": "形容詞", "grade": "8下", "icon": "⚖️", "color": "#7b5cf0", "qs": [{"zh": "我和你一樣高。", "t": ["I", "am", "as", "tall", "as", "you", "."], "d": ["taller", "so"]}, {"zh": "他跑得和我一樣快。", "t": ["He", "runs", "as", "fast", "as", "me", "."], "d": ["faster", "more"]}, {"zh": "今天沒有昨天那麼冷。", "t": ["Today", "is", "not", "as", "cold", "as", "yesterday", "."], "d": ["colder", "more"]}, {"zh": "我的房間和你的一樣大。", "t": ["My", "room", "is", "as", "big", "as", "yours", "."], "d": ["bigger", "most"]}, {"zh": "這本書和那本一樣好。", "t": ["This", "book", "is", "as", "good", "as", "that", "one", "."], "d": ["better", "more"]}, {"zh": "她英語說得和老師一樣好。", "t": ["She", "speaks", "English", "as", "well", "as", "the", "teacher", "."], "d": ["better", "more"]}, {"zh": "我的成績沒有我姊姊的好。", "t": ["My", "grades", "are", "not", "as", "good", "as", "my", "sister's", "."], "d": ["better", "most"]}, {"zh": "這部電影沒有那本書那麼有趣。", "t": ["This", "movie", "is", "not", "as", "interesting", "as", "the", "book", "."], "d": ["more", "so"]}, {"zh": "搭公車和騎腳踏車一樣快。", "t": ["Taking", "the", "bus", "is", "as", "fast", "as", "riding", "a", "bike", "."], "d": ["faster", "more"]}, {"zh": "待在家和跟朋友出去一樣好玩。", "t": ["Staying", "at", "home", "is", "as", "fun", "as", "going", "out", "with", "friends", "."], "d": ["more", "funner"]}]}, {"name": "相關連接詞", "cat": "連接詞", "grade": "8下", "icon": "🔗", "color": "#7b5cf0", "qs": [{"zh": "他既高又壯。", "t": ["He", "is", "both", "tall", "and", "strong", "."], "d": ["either", "nor"]}, {"zh": "她既不喜歡貓也不喜歡狗。", "t": ["She", "likes", "neither", "cats", "nor", "dogs", "."], "d": ["either", "both"]}, {"zh": "你可以喝茶或咖啡。", "t": ["You", "can", "have", "either", "tea", "or", "coffee", "."], "d": ["neither", "both"]}, {"zh": "你和我都必須去。", "t": ["Both", "you", "and", "I", "have", "to", "go", "."], "d": ["either", "neither"]}, {"zh": "他不但聰明而且用功。", "t": ["He", "is", "not", "only", "smart", "but", "also", "hardworking", "."], "d": ["either", "nor"]}, {"zh": "我媽和我爸都會說英語。", "t": ["Both", "my", "mom", "and", "my", "dad", "can", "speak", "English", "."], "d": ["either", "neither"]}, {"zh": "這家餐廳不但便宜而且好吃。", "t": ["This", "restaurant", "is", "not", "only", "cheap", "but", "also", "delicious", "."], "d": ["either", "nor"]}, {"zh": "你要嘛現在讀書，要嘛考試不及格。", "t": ["Either", "you", "study", "now", "or", "you", "fail", "the", "exam", "."], "d": ["neither", "both"]}, {"zh": "我既沒有時間也沒有錢去旅行。", "t": ["I", "have", "neither", "the", "time", "nor", "the", "money", "to", "travel", "."], "d": ["either", "both"]}, {"zh": "他不但通過了考試，而且拿到最高分。", "t": ["He", "not", "only", "passed", "the", "exam", "but", "also", "got", "the", "highest", "score", "."], "d": ["either", "nor"]}]}]}, {"title": "進階句構", "color": "#ec5a86", "icon": "🏆", "grade": "九年級", "units": [{"name": "現在完成式", "cat": "時式", "grade": "9上", "qs": [{"zh": "我已經完成了。", "t": ["I", "have", "finished", "."], "d": ["finish", "has"]}, {"zh": "她已經到了。", "t": ["She", "has", "arrived", "."], "d": ["arrive", "have"]}, {"zh": "我已經吃過午餐了。", "t": ["I", "have", "eaten", "lunch", "."], "d": ["ate", "has"]}, {"zh": "他已經寫完那封信了。", "t": ["He", "has", "written", "the", "letter", "."], "d": ["wrote", "have"]}, {"zh": "我們已經看過那部電影了。", "t": ["We", "have", "seen", "the", "movie", "."], "d": ["saw", "has"]}, {"zh": "我從沒去過日本。", "t": ["I", "have", "never", "been", "to", "Japan", "."], "d": ["went", "was"]}, {"zh": "她已經做完功課了。", "t": ["She", "has", "done", "her", "homework", "."], "d": ["did", "have"]}, {"zh": "你曾經吃過壽司嗎？", "t": ["Have", "you", "ever", "eaten", "sushi", "?"], "d": ["ate", "Has"]}, {"zh": "他已經在這裡住了十年。", "t": ["He", "has", "lived", "here", "for", "ten", "years", "."], "d": ["live", "have"]}, {"zh": "我還沒讀過這本有趣的書。", "t": ["I", "have", "not", "read", "this", "interesting", "book", "yet", "."], "d": ["reads", "has"]}], "icon": "✅", "color": "#ec5a86"}, {"name": "過去完成式", "cat": "時式", "grade": "9上", "icon": "⏮️", "color": "#ec5a86", "qs": [{"zh": "火車已經開走了。", "t": ["The", "train", "had", "already", "left", "."], "d": ["have", "leaved"]}, {"zh": "我以前從沒見過他。", "t": ["I", "had", "never", "met", "him", "before", "."], "d": ["has", "meeted"]}, {"zh": "她發現她把鑰匙弄丟了。", "t": ["She", "found", "that", "she", "had", "lost", "her", "keys", "."], "d": ["have", "losed"]}, {"zh": "我們到的時候電影已經開始了。", "t": ["The", "movie", "had", "already", "started", "when", "we", "arrived", "."], "d": ["have", "starts"]}, {"zh": "我意識到我以前見過她。", "t": ["I", "realized", "that", "I", "had", "met", "her", "before", "."], "d": ["has", "meeting"]}, {"zh": "我打電話給她時，她已經睡著了。", "t": ["She", "had", "fallen", "asleep", "when", "I", "called", "her", "."], "d": ["have", "falled"]}, {"zh": "我發現我犯了一個錯誤。", "t": ["I", "found", "that", "I", "had", "made", "a", "mistake", "."], "d": ["has", "maked"]}, {"zh": "他睡覺前已經把作業寫完了。", "t": ["He", "had", "finished", "his", "homework", "before", "he", "went", "to", "bed", "."], "d": ["have", "finishing"]}, {"zh": "她告訴我她已經把那本書讀完了。", "t": ["She", "told", "me", "that", "she", "had", "finished", "reading", "the", "book", "."], "d": ["have", "readed"]}, {"zh": "我們到車站時，公車已經開走了。", "t": ["The", "bus", "had", "already", "gone", "when", "we", "got", "to", "the", "station", "."], "d": ["have", "goed"]}]}, {"name": "被動句", "cat": "被動句", "grade": "9上", "qs": [{"zh": "門被打開了。", "t": ["The", "door", "was", "opened", "."], "d": ["opens", "opening"]}, {"zh": "英語在許多國家被使用。", "t": ["English", "is", "used", "in", "many", "countries", "."], "d": ["uses", "are"]}, {"zh": "這本書是由他寫的。", "t": ["This", "book", "was", "written", "by", "him", "."], "d": ["wrote", "is"]}, {"zh": "那間房子去年被賣掉了。", "t": ["The", "house", "was", "sold", "last", "year", "."], "d": ["sell", "were"]}, {"zh": "這些照片是由我媽媽拍的。", "t": ["These", "photos", "were", "taken", "by", "my", "mother", "."], "d": ["took", "was"]}, {"zh": "窗戶被那男孩打破了。", "t": ["The", "window", "was", "broken", "by", "the", "boy", "."], "d": ["broke", "is"]}, {"zh": "那首歌被許多人喜愛。", "t": ["The", "song", "is", "loved", "by", "many", "people", "."], "d": ["loves", "are"]}, {"zh": "這座橋是十年前建造的。", "t": ["This", "bridge", "was", "built", "ten", "years", "ago", "."], "d": ["build", "were"]}, {"zh": "那封信昨天被寄出了。", "t": ["The", "letter", "was", "sent", "out", "yesterday", "."], "d": ["send", "is"]}, {"zh": "這些美麗的花每天被澆水。", "t": ["These", "beautiful", "flowers", "are", "watered", "every", "day", "."], "d": ["water", "is"]}], "icon": "🔄", "color": "#ec5a86"}, {"name": "感官與使役動詞", "cat": "感官/使役動詞", "grade": "9上", "qs": [{"zh": "我看見他跑步。", "t": ["I", "saw", "him", "run", "."], "d": ["to", "running"]}, {"zh": "讓我幫你。", "t": ["Let", "me", "help", "you", "."], "d": ["to", "helping"]}, {"zh": "她讓我大笑。", "t": ["She", "made", "me", "laugh", "."], "d": ["to", "laughed"]}, {"zh": "我聽見她唱歌。", "t": ["I", "heard", "her", "sing", "."], "d": ["to", "sang"]}, {"zh": "老師要我們讀書。", "t": ["The", "teacher", "made", "us", "study", "."], "d": ["to", "studied"]}, {"zh": "我們看著太陽升起。", "t": ["We", "watched", "the", "sun", "rise", "."], "d": ["to", "rose"]}, {"zh": "別讓他離開房間。", "t": ["Don't", "let", "him", "leave", "the", "room", "."], "d": ["to", "left"]}, {"zh": "我看見那男孩打破了窗戶。", "t": ["I", "saw", "the", "boy", "break", "the", "window", "."], "d": ["to", "broke"]}, {"zh": "她媽媽要她清理房間。", "t": ["Her", "mother", "made", "her", "clean", "the", "room", "."], "d": ["to", "cleaned"]}, {"zh": "我們聽見他們在花園裡唱那首歌。", "t": ["We", "heard", "them", "sing", "the", "song", "in", "the", "garden", "."], "d": ["to", "sang"]}], "icon": "👀", "color": "#ec5a86"}, {"name": "分詞當形容詞", "cat": "分詞", "grade": "9上", "icon": "🎭", "color": "#ec5a86", "qs": [{"zh": "這本書很有趣。", "t": ["The", "book", "is", "interesting", "."], "d": ["interested"]}, {"zh": "我對藝術很感興趣。", "t": ["I", "am", "interested", "in", "art", "."], "d": ["interesting"]}, {"zh": "那個消息令人興奮。", "t": ["The", "news", "is", "exciting", "."], "d": ["excited"]}, {"zh": "孩子們對比賽感到興奮。", "t": ["The", "kids", "are", "excited", "about", "the", "game", "."], "d": ["exciting"]}, {"zh": "跑步後我覺得很累。", "t": ["I", "feel", "tired", "after", "running", "."], "d": ["tiring"]}, {"zh": "這部無聊的電影讓我睡著了。", "t": ["The", "boring", "movie", "made", "me", "sleep", "."], "d": ["bored"]}, {"zh": "她被那場漫長的演講弄得很無聊。", "t": ["She", "was", "bored", "by", "the", "long", "speech", "."], "d": ["boring"]}, {"zh": "這個令人驚訝的結果嚇到了大家。", "t": ["The", "surprising", "result", "shocked", "everyone", "."], "d": ["surprised"]}, {"zh": "我對那道困難的問題感到困惑。", "t": ["I", "was", "confused", "by", "the", "hard", "question", "."], "d": ["confusing"]}, {"zh": "這個關於太空的紀錄片非常有趣。", "t": ["This", "documentary", "about", "space", "is", "very", "interesting", "."], "d": ["interested"]}]}, {"name": "關係子句", "cat": "子句", "grade": "9下", "qs": [{"zh": "我認識住在這裡的男孩。", "t": ["I", "know", "the", "boy", "who", "lives", "here", "."], "d": ["which", "whom"]}, {"zh": "這是我買的書。", "t": ["This", "is", "the", "book", "which", "I", "bought", "."], "d": ["who", "whom"]}, {"zh": "幫助我的女人很善良。", "t": ["The", "woman", "who", "helped", "me", "is", "kind", "."], "d": ["which", "whom"]}, {"zh": "我喜歡在牆上的那幅畫。", "t": ["I", "like", "the", "picture", "that", "is", "on", "the", "wall", "."], "d": ["who", "whose"]}, {"zh": "那個會說英語的男人是我老師。", "t": ["The", "man", "who", "speaks", "English", "is", "my", "teacher", "."], "d": ["which", "whom"]}, {"zh": "她穿的裙子很美。", "t": ["The", "dress", "which", "she", "wears", "is", "beautiful", "."], "d": ["who", "whom"]}, {"zh": "我遇見了贏得比賽的女孩。", "t": ["I", "met", "the", "girl", "who", "won", "the", "game", "."], "d": ["which", "whom"]}, {"zh": "那部我昨天看的電影很有趣。", "t": ["The", "movie", "that", "I", "saw", "yesterday", "was", "fun", "."], "d": ["who", "whom"]}, {"zh": "我住在有一座大公園的城市裡。", "t": ["I", "live", "in", "a", "city", "which", "has", "a", "big", "park", "."], "d": ["who", "whom"]}, {"zh": "那個坐在我旁邊的男孩是我的好朋友。", "t": ["The", "boy", "who", "sits", "next", "to", "me", "is", "my", "good", "friend", "."], "d": ["which", "whom"]}], "icon": "🧷", "color": "#ec5a86"}, {"name": "名詞子句", "cat": "子句", "grade": "9下", "qs": [{"zh": "我知道你是對的。", "t": ["I", "know", "that", "you", "are", "right", "."], "d": ["what", "which"]}, {"zh": "我不知道他是誰。", "t": ["I", "don't", "know", "who", "he", "is", "."], "d": ["that", "what"]}, {"zh": "我認為她很聰明。", "t": ["I", "think", "that", "she", "is", "smart", "."], "d": ["what", "who"]}, {"zh": "你知道他住在哪裡嗎？", "t": ["Do", "you", "know", "where", "he", "lives", "?"], "d": ["that", "what"]}, {"zh": "我不知道你要什麼。", "t": ["I", "don't", "know", "what", "you", "want", "."], "d": ["that", "which"]}, {"zh": "她告訴我她很開心。", "t": ["She", "told", "me", "that", "she", "was", "happy", "."], "d": ["what", "who"]}, {"zh": "請告訴我火車何時到達。", "t": ["Please", "tell", "me", "when", "the", "train", "arrives", "."], "d": ["that", "what"]}, {"zh": "我不明白你為什麼哭。", "t": ["I", "don't", "understand", "why", "you", "are", "crying", "."], "d": ["that", "what"]}, {"zh": "我相信他會通過這場考試。", "t": ["I", "believe", "that", "he", "will", "pass", "the", "test", "."], "d": ["what", "who"]}, {"zh": "沒有人知道那個盒子裡有什麼。", "t": ["Nobody", "knows", "what", "is", "in", "the", "box", "."], "d": ["that", "which"]}], "icon": "💭", "color": "#ec5a86"}, {"name": "從屬子句與句型", "cat": "子句", "grade": "9下", "qs": [{"zh": "如果下雨，我會待在家裡。", "t": ["If", "it", "rains", ",", "I", "will", "stay", "home", "."], "d": ["because", "when"]}, {"zh": "我因為累了而早睡。", "t": ["I", "slept", "early", "because", "I", "was", "tired", "."], "d": ["if", "so"]}, {"zh": "當我年輕時，我住在鄉下。", "t": ["When", "I", "was", "young", ",", "I", "lived", "in", "the", "country", "."], "d": ["if", "because"]}, {"zh": "這箱子太重了搬不動。", "t": ["This", "box", "is", "too", "heavy", "to", "move", "."], "d": ["so", "enough"]}, {"zh": "他跑得太快，我追不上他。", "t": ["He", "runs", "so", "fast", "that", "I", "can't", "catch", "him", "."], "d": ["too", "very"]}, {"zh": "我以前住在那座城市。", "t": ["I", "used", "to", "live", "in", "that", "city", "."], "d": ["use", "using"]}, {"zh": "我離開之前會打電話給你。", "t": ["I", "will", "call", "you", "before", "I", "leave", "."], "d": ["because", "so"]}, {"zh": "做完功課後，她看了電視。", "t": ["After", "she", "did", "her", "homework", ",", "she", "watched", "TV", "."], "d": ["before", "because"]}, {"zh": "因為天氣冷，我們待在室內。", "t": ["Because", "the", "weather", "was", "cold", ",", "we", "stayed", "inside", "."], "d": ["if", "so"]}, {"zh": "他太小了不能一個人去上學。", "t": ["He", "is", "too", "young", "to", "go", "to", "school", "alone", "."], "d": ["so", "enough"]}], "icon": "🧩", "color": "#ec5a86"}, {"name": "假設語氣", "cat": "子句", "grade": "9下", "icon": "💭", "color": "#ec5a86", "qs": [{"zh": "假如我是你，我會道歉。", "t": ["If", "I", "were", "you", ",", "I", "would", "apologize", "."], "d": ["was", "will"]}, {"zh": "假如我有錢，我會買一輛車。", "t": ["If", "I", "had", "money", ",", "I", "would", "buy", "a", "car", "."], "d": ["have", "bought"]}, {"zh": "假如我會飛，我會飛到你身邊。", "t": ["If", "I", "could", "fly", ",", "I", "would", "fly", "to", "you", "."], "d": ["can", "flew"]}, {"zh": "假如我知道答案，我會告訴你。", "t": ["If", "I", "knew", "the", "answer", ",", "I", "would", "tell", "you", "."], "d": ["know", "told"]}, {"zh": "假如我是一隻鳥，我就會很自由。", "t": ["If", "I", "were", "a", "bird", ",", "I", "would", "be", "free", "."], "d": ["was", "will"]}, {"zh": "假如他更用功，他就會通過考試。", "t": ["If", "he", "studied", "harder", ",", "he", "would", "pass", "the", "exam", "."], "d": ["studies", "passed"]}, {"zh": "假如我早知道，我就會早點來。", "t": ["If", "I", "had", "known", ",", "I", "would", "have", "come", "earlier", "."], "d": ["knew", "came"]}, {"zh": "假如你昨天有來，你就會見到她。", "t": ["If", "you", "had", "come", "yesterday", ",", "you", "would", "have", "met", "her", "."], "d": ["came", "meet"]}, {"zh": "假如她那時更小心，這場意外就不會發生。", "t": ["If", "she", "had", "been", "more", "careful", ",", "the", "accident", "wouldn't", "have", "happened", "."], "d": ["was", "happen"]}, {"zh": "假如我當初聽了你的建議，我就不會犯這個錯誤。", "t": ["If", "I", "had", "listened", "to", "your", "advice", ",", "I", "wouldn't", "have", "made", "this", "mistake", "."], "d": ["listen", "make"]}]}, {"name": "附加問句", "cat": "附加問句", "grade": "9下", "icon": "↩️", "color": "#ec5a86", "qs": [{"zh": "你是學生，對吧？", "t": ["You", "are", "a", "student", ",", "aren't", "you", "?"], "d": ["isn't", "don't"]}, {"zh": "她喜歡音樂，對吧？", "t": ["She", "likes", "music", ",", "doesn't", "she", "?"], "d": ["isn't", "don't"]}, {"zh": "他們住在這裡，對吧？", "t": ["They", "live", "here", ",", "don't", "they", "?"], "d": ["doesn't", "aren't"]}, {"zh": "你會游泳，對吧？", "t": ["You", "can", "swim", ",", "can't", "you", "?"], "d": ["don't", "aren't"]}, {"zh": "這不容易，對吧？", "t": ["It", "is", "not", "easy", ",", "is", "it", "?"], "d": ["isn't", "doesn't"]}, {"zh": "他昨天遲到了，對吧？", "t": ["He", "was", "late", "yesterday", ",", "wasn't", "he", "?"], "d": ["didn't", "weren't"]}, {"zh": "你做完了功課，對吧？", "t": ["You", "finished", "your", "homework", ",", "didn't", "you", "?"], "d": ["don't", "haven't"]}, {"zh": "我們明天應該早點來，對吧？", "t": ["We", "should", "come", "early", "tomorrow", ",", "shouldn't", "we", "?"], "d": ["don't", "aren't"]}, {"zh": "她從沒去過日本，對吧？", "t": ["She", "has", "never", "been", "to", "Japan", ",", "has", "she", "?"], "d": ["hasn't", "doesn't"]}, {"zh": "你的爸爸每天開車上班，對吧？", "t": ["Your", "father", "drives", "to", "work", "every", "day", ",", "doesn't", "he", "?"], "d": ["don't", "isn't"]}]}, {"name": "wh-不定詞片語", "cat": "不定詞", "grade": "9下", "icon": "🎯", "color": "#ec5a86", "qs": [{"zh": "我知道怎麼游泳。", "t": ["I", "know", "how", "to", "swim", "."], "d": ["what", "where"]}, {"zh": "告訴我該做什麼。", "t": ["Tell", "me", "what", "to", "do", "."], "d": ["how", "when"]}, {"zh": "她知道去哪裡。", "t": ["She", "knows", "where", "to", "go", "."], "d": ["how", "what"]}, {"zh": "我不知道說什麼。", "t": ["I", "don't", "know", "what", "to", "say", "."], "d": ["how", "where"]}, {"zh": "你能教我怎麼煮飯嗎？", "t": ["Can", "you", "teach", "me", "how", "to", "cook", "?"], "d": ["what", "where"]}, {"zh": "我們不確定何時該離開。", "t": ["We", "are", "not", "sure", "when", "to", "leave", "."], "d": ["how", "what"]}, {"zh": "他學會了如何修理腳踏車。", "t": ["He", "learned", "how", "to", "fix", "the", "bike", "."], "d": ["what", "where"]}, {"zh": "請告訴我該把它放在哪裡。", "t": ["Please", "tell", "me", "where", "to", "put", "it", "."], "d": ["how", "what"]}, {"zh": "我不知道下一步該做什麼。", "t": ["I", "have", "no", "idea", "what", "to", "do", "next", "."], "d": ["how", "where"]}, {"zh": "她正在學習如何用英語寫一封信。", "t": ["She", "is", "learning", "how", "to", "write", "a", "letter", "in", "English", "."], "d": ["what", "where"]}]}]}, {"title": "常用片語", "color": "#16b5a3", "icon": "🔤", "grade": "跨年級", "units": [{"name": "可分動詞片語", "cat": "介詞與介系詞片語", "grade": "跨年級", "icon": "⬆️", "color": "#16b5a3", "qs": [{"zh": "把它撿起來。", "t": ["Pick", "it", "up", "."], "d": ["on"]}, {"zh": "把它穿上。", "t": ["Put", "it", "on", "."], "d": ["up"]}, {"zh": "把它脫掉。", "t": ["Take", "it", "off", "."], "d": ["on"]}, {"zh": "把它打開。", "t": ["Turn", "it", "on", "."], "d": ["off"]}, {"zh": "把它關掉。", "t": ["Turn", "it", "off", "."], "d": ["on"]}, {"zh": "把它們收好。", "t": ["Put", "them", "away", "."], "d": ["on"]}, {"zh": "請把它撿起來。", "t": ["Please", "pick", "it", "up", "."], "d": ["on"]}, {"zh": "把你的鞋子脫掉。", "t": ["Take", "off", "your", "shoes", "."], "d": ["on"]}, {"zh": "請關掉電視。", "t": ["Please", "turn", "off", "the", "TV", "."], "d": ["on"]}, {"zh": "別把它丟掉。", "t": ["Don't", "throw", "it", "away", "."], "d": ["out"]}]}, {"name": "look / get 常用片語", "cat": "介詞與介系詞片語", "grade": "跨年級", "icon": "👀", "color": "#16b5a3", "qs": [{"zh": "看那個。", "t": ["Look", "at", "that", "."], "d": ["for"]}, {"zh": "起床！", "t": ["Get", "up", "!"], "d": ["on"]}, {"zh": "等我。", "t": ["Wait", "for", "me", "."], "d": ["at"]}, {"zh": "聽音樂。", "t": ["Listen", "to", "the", "music", "."], "d": ["at"]}, {"zh": "找我的筆。", "t": ["Look", "for", "my", "pen", "."], "d": ["at"]}, {"zh": "上公車。", "t": ["Get", "on", "the", "bus", "."], "d": ["in"]}, {"zh": "照顧你的妹妹。", "t": ["Look", "after", "your", "sister", "."], "d": ["for"]}, {"zh": "我早上七點起床。", "t": ["I", "get", "up", "at", "seven", "."], "d": ["on"]}, {"zh": "我在找我的鑰匙。", "t": ["I", "am", "looking", "for", "my", "keys", "."], "d": ["at"]}, {"zh": "下課後我會照顧我的狗。", "t": ["I", "look", "after", "my", "dog", "after", "school", "."], "d": ["for"]}]}, {"name": "生活常用片語", "cat": "介詞與介系詞片語", "grade": "跨年級", "icon": "💬", "color": "#16b5a3", "qs": [{"zh": "快一點！", "t": ["Hurry", "up", "!"], "d": ["on"]}, {"zh": "小心！", "t": ["Look", "out", "!"], "d": ["for"]}, {"zh": "別放棄。", "t": ["Don't", "give", "up", "."], "d": ["in"]}, {"zh": "請進來。", "t": ["Come", "in", "please", "."], "d": ["on"]}, {"zh": "我們出去吧。", "t": ["Let's", "go", "out", "."], "d": ["in"]}, {"zh": "試穿這件外套。", "t": ["Try", "on", "this", "coat", "."], "d": ["off"]}, {"zh": "打掃你的房間。", "t": ["Clean", "up", "your", "room", "."], "d": ["on"]}, {"zh": "上課要專心。", "t": ["Pay", "attention", "in", "class", "."], "d": ["for"]}, {"zh": "好好照顧你自己。", "t": ["Take", "care", "of", "yourself", "."], "d": ["for"]}, {"zh": "我終於找出答案了。", "t": ["I", "finally", "found", "out", "the", "answer", "."], "d": ["for"]}]}]}];
+const $=s=>document.querySelector(s);
+// 資料版本旗標：關卡結構變動(如插入國小關)時，清除舊的位置式進度避免錯位
+const DATAVER="2026-elem7";
+if(localStorage.getItem("pinjuVer")!==DATAVER){["pinju2","pinjuStat","pinjuMist"].forEach(k=>localStorage.removeItem(k));localStorage.setItem("pinjuVer",DATAVER);}
+
+/* ===== 儲存 ===== */
+const PROG=JSON.parse(localStorage.getItem("pinju2")||"{}");           // {key:{stars,xp}}
+const STAT=Object.assign({answered:0,correct:0,streak:0,lastDay:"",days:{}},JSON.parse(localStorage.getItem("pinjuStat")||"{}"));
+const MIST=JSON.parse(localStorage.getItem("pinjuMist")||"{}");        // {qid:{zh,t,d,cat,unit,box,wrong}}
+const SET=Object.assign({listen:false},JSON.parse(localStorage.getItem("pinjuSet")||"{}"));
+const saveP=()=>localStorage.setItem("pinju2",JSON.stringify(PROG));
+const saveS=()=>localStorage.setItem("pinjuStat",JSON.stringify(STAT));
+const saveM=()=>localStorage.setItem("pinjuMist",JSON.stringify(MIST));
+/* ===== 忍者修行：跨App共用經驗值錢包(同網域，灌進火影修行計畫) ===== */
+window.Ninja=window.Ninja||(function(){var K='ninja_xp_v1';function L(){try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}}function G(){var w=L();w.xp=w.xp||0;w.bySrc=w.bySrc||{};w.correct=w.correct||0;w.units=w.units||0;w.jutsu=w.jutsu||[];w.seen=w.seen||{};return w}function P(w){w.ts=Date.now();try{localStorage.setItem(K,JSON.stringify(w))}catch(e){}}return{get:G,gain:function(n,a,o){o=o||{};var w=G();w.xp+=n;w.bySrc[a]=(w.bySrc[a]||0)+n;w.correct+=(o.correct||0);w.units+=(o.unit||0);P(w);return w},backfill:function(a,x,o){var w=G();if(w.seen[a])return w;o=o||{};w.xp+=x;w.bySrc[a]=(w.bySrc[a]||0)+x;w.correct+=(o.correct||0);w.units+=(o.unit||0);w.seen[a]=1;P(w);return w}}})();
+/* 舊經驗遷移：拼句既有 XP 一次性灌入錢包 */
+(function(){try{var xp=0;Object.values(PROG).forEach(function(p){xp+=(p.xp||0);});Ninja.backfill('pinju',xp,{correct:STAT.correct||0});}catch(e){}})();
+const saveSet=()=>localStorage.setItem("pinjuSet",JSON.stringify(SET));
+
+/* 攤平單元順序 */
+let flat=[];
+STAGES.forEach((s,si)=>s.units.forEach((u,ui)=>flat.push({si,ui,key:"s"+si+"u"+ui,unit:u})));
+const uKey=(si,ui)=>"s"+si+"u"+ui;
+const unitDone=(si,ui)=>!!PROG[uKey(si,ui)];
+const unitOpen=(si,ui)=>ui===0||unitDone(si,ui-1);
+const stageUnitsDone=si=>STAGES[si].units.filter((u,ui)=>unitDone(si,ui)).length;
+const stageAllDone=si=>stageUnitsDone(si)===STAGES[si].units.length;
+const stageOpen=si=>si===0||stageAllDone(si-1)||stageUnitsDone(si)>0;
+function activeMist(){return Object.keys(MIST).filter(k=>MIST[k].box<6);}
+
+/* ===== 分頁 ===== */
+function showTab(t){
+  ["learn","progress","mistakes","lesson","done"].forEach(s=>$("#"+s).classList.toggle("on",s===t));
+  $("#nav").classList.remove("hide");
+  $("#navLearn").classList.toggle("act",t==="learn");
+  $("#navProg").classList.toggle("act",t==="progress");
+  $("#navMist").classList.toggle("act",t==="mistakes");
+  if(t==="learn")renderLearn();
+  if(t==="progress")renderProgress();
+  if(t==="mistakes")renderMist();
+  renderInstallBar();
+}
+function refreshBadge(){$("#navMist").setAttribute("data-n",activeMist().length);}
+
+/* ===== 學習：關卡卡片 / 單元路徑 ===== */
+let curStage=null;
+function renderLearn(){
+  refreshBadge();
+  const L=$("#learn");
+  if(curStage===null){
+    let star=0,xp=0;Object.values(PROG).forEach(p=>{star+=p.stars;xp+=p.xp||0;});
+    let h=`<div class="hero"><h1>🧩 國中英語句型</h1><p>國小 → 國中 · 依教育部課綱設計</p>
+      <div class="stats"><div class="st"><b>🔥 ${STAT.streak}</b><small>連續天數</small></div>
+        <div class="st"><b>⭐ ${star}</b><small>星星</small></div>
+        <div class="st"><b>🏅 ${xp}</b><small>XP</small></div></div></div><div class="pad" style="padding-top:8px">`;
+    const curIdx=STAGES.findIndex((st,i)=>stageOpen(i)&&stageUnitsDone(i)<st.units.length);
+    STAGES.forEach((s,si)=>{
+      const tot=s.units.length,done=stageUnitsDone(si),pc=Math.round(done/tot*100);
+      const lock=!stageOpen(si), cur=si===curIdx;
+      h+=`<div class="card${lock?' lockcard':''}${cur?' cur':''}" style="--c:${s.color};--p:${pc}%" ${lock?'':`onclick="openStage(${si})"`}>
+        <div class="ring"><i>${lock?'🔒':s.icon}</i></div>
+        <div class="info"><b>第 ${si+1} 關 · ${s.title}</b>
+          <small>${s.grade} · ${tot} 單元 · 完成 ${done}/${tot}</small></div>
+        <div class="arw">${lock?'':'›'}</div></div>`;
+    });
+    h+=`</div>`;
+    L.innerHTML=h;
+  }else{
+    const s=STAGES[curStage];
+    let h=`<div class="backbar"><button onclick="closeStage()">‹</button>
+      <span style="color:${s.color}">${s.icon} ${s.title}</span></div><div class="path">`;
+    s.units.forEach((u,ui)=>{
+      const open=unitOpen(curStage,ui),p=PROG[uKey(curStage,ui)];
+      const cur=open&&!p;
+      let st;
+      if(p)st=`<span class="st-star">${"★".repeat(p.stars)}${"☆".repeat(3-p.stars)}</span>`;
+      else if(open)st=`<span class="st-go">開始</span>`;
+      else st=`<span class="st-lock">🔒</span>`;
+      h+=`<div class="unode ${open?'open':'lock'} ${cur?'cur':''}" style="--c:${s.color}" ${open?`onclick="startUnit(${curStage},${ui})"`:''}>
+        <div class="udot">${open?u.icon:'🔒'}</div>
+        <div class="ulab"><b>${u.name}</b><small>${u.qs.length} 題 · ${u.cat}</small></div>
+        <div class="ust">${st}</div></div>`;
+    });
+    const all=stageAllDone(curStage);
+    h+=`<div class="unode ${all?'open cur':'lock'}" style="--c:#ff9f43" ${all?`onclick="startReviewStage(${curStage})"`:''}>
+      <div class="udot">${all?'🎲':'🔒'}</div>
+      <div class="ulab"><b>綜合複習</b><small>${all?'混合本關全部句型 · 隨機 15 題':'完成所有單元後解鎖'}</small></div>
+      <div class="ust">${all?'<span class="st-go">挑戰</span>':'<span class="st-lock">🔒</span>'}</div></div>`;
+    h+=`</div>`;
+    L.innerHTML=h;
+  }
+}
+function openStage(si){curStage=si;renderLearn();}
+function closeStage(){curStage=null;renderLearn();}
+
+/* ===== 進度總攬 ===== */
+function renderProgress(){
+  const totU=flat.length, doneU=flat.filter(f=>PROG[f.key]).length;
+  const pc=Math.round(doneU/totU*100);
+  let star=0,xp=0; Object.values(PROG).forEach(p=>{star+=p.stars;xp+=p.xp||0;});
+  const acc=STAT.answered?Math.round(STAT.correct/STAT.answered*100):0;
+  let h=`<div class="hdr"><h1>📊 我的進度</h1></div><div class="pad">
+    <div class="big-ring" style="--p:${pc}%"><i><b>${pc}%</b><small>總完成度</small></i></div>
+    <div class="kpis">
+      <div class="kpi"><b>🔥 ${STAT.streak}</b><small>連續天數</small></div>
+      <div class="kpi"><b>⭐ ${star}</b><small>星星</small></div>
+      <div class="kpi"><b>🏅 ${xp}</b><small>XP</small></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b>${STAT.answered}</b><small>累積作答</small></div>
+      <div class="kpi"><b>${acc}%</b><small>正確率</small></div>
+      <div class="kpi"><b>${activeMist().length}</b><small>待複習錯題</small></div>
+    </div>
+    <div class="sec-t">各關完成度</div>`;
+  STAGES.forEach((s,si)=>{
+    const tot=s.units.length,done=stageUnitsDone(si),p=Math.round(done/tot*100);
+    h+=`<div class="prow"><div class="pr-top"><span class="nm">${s.icon} ${s.title}</span>
+      <span class="pc">${done}/${tot}</span></div>
+      <div class="tb"><i style="width:${p}%;background:${s.color}"></i></div></div>`;
+  });
+  h+=`</div>`;
+  $("#progress").innerHTML=h;
+}
+
+/* ===== 錯題本 ===== */
+function renderMist(){
+  const keys=activeMist();
+  let h=`<div class="hdr"><h1>📕 錯題本</h1></div><div class="pad">`;
+  if(!keys.length){
+    h+=`<div class="empty">🎉 目前沒有待複習的錯題！<br>答錯的題目會自動收進這裡，<br>連續答對幾次就會「畢業」移除。</div>`;
+  }else{
+    h+=`<div class="mist-hero"><div class="n">${keys.length}</div><div style="color:var(--gray-d)">題待複習</div></div>
+      <button class="btn go" style="margin:10px 0 18px" onclick="startReviewMist()">開始複習錯題</button>`;
+    keys.sort((a,b)=>MIST[a].box-MIST[b].box).forEach(k=>{
+      const m=MIST[k];
+      h+=`<div class="mi"><span class="box">第${m.box}盒</span>
+        <div class="zh">${m.zh}</div><div class="en">${pretty(m.t)}</div></div>`;
+    });
+  }
+  h+=`</div>`;
+  $("#mistakes").innerHTML=h;
+}
+
+/* ===== 課程流程 ===== */
+let mode="unit", qList=[], qIdx=0, origLen=0, hp=5, correct=0, xp=0, answer=[], curKeyInfo=null, badIdx=-1, qHinted=false;
+
+function startUnit(si,ui){
+  mode="unit"; curKeyInfo={si,ui,key:uKey(si,ui),unit:STAGES[si].units[ui]};
+  qList=STAGES[si].units[ui].qs.map((q,i)=>tagQ(q,uKey(si,ui),i,STAGES[si].units[ui].name,STAGES[si].units[ui].cat));
+  beginLesson();
+}
+function startReviewStage(si){
+  mode="review";
+  let pool=[];
+  STAGES[si].units.forEach((u,ui)=>u.qs.forEach((q,i)=>pool.push(tagQ(q,uKey(si,ui),i,u.name,u.cat))));
+  shuffle(pool); qList=pool.slice(0,15);
+  beginLesson();
+}
+function startReviewMist(){
+  mode="review";
+  const keys=activeMist();
+  keys.sort((a,b)=>MIST[a].box-MIST[b].box);
+  qList=keys.slice(0,20).map(k=>{const m=MIST[k];return {_qid:k,zh:m.zh,t:m.t,d:m.d,cat:m.cat,unit:m.unit};});
+  if(!qList.length){showTab("mistakes");return;}
+  beginLesson();
+}
+function tagQ(q,key,i,unit,cat){return {_qid:key+"#"+i,zh:q.zh,t:q.t,d:q.d||[],cat:cat,unit:unit};}
+
+function beginLesson(){
+  qIdx=0; origLen=qList.length; hp=5; correct=0; xp=0;
+  $("#hearts").style.visibility = mode==="review"?"hidden":"visible";
+  $("#qtag").textContent = mode==="review"?"複習模式":"把中文翻成英文";
+  $("#lchip").classList.toggle("on",SET.listen);
+  ["learn","progress","mistakes","done"].forEach(s=>$("#"+s).classList.remove("on"));
+  $("#lesson").classList.add("on"); $("#nav").classList.add("hide");
+  loadQ();
+}
+function loadQ(){
+  const q=qList[qIdx]; answer=[]; badIdx=-1; qHinted=false; updateHintBtn();
+  q._tiles=shuffle([...q.t,...q.d].map((w,k)=>({w,id:k,taken:false})));
+  applyListen(q); setQEmoji(q);
+  $("#pbar").style.width=Math.min(qIdx/origLen*100,100)+"%";
+  $("#hp").textContent=hp;
+  $("#sheet").className="sheet";
+  draw(); setTimeout(speakCur,350);
+}
+function applyListen(q){
+  if(SET.listen){$("#zh").textContent="🎧 聽音檔，拼出英文句子";$("#zh").style.color="var(--gray-d)";}
+  else{$("#zh").textContent=q.zh;$("#zh").style.color="";}
+}
+function draw(){
+  const q=qList[qIdx],A=$("#answer"),B=$("#bank");A.innerHTML="";B.innerHTML="";
+  answer.forEach((o,i)=>{const t=tile(o,()=>move(o,false));if(i===badIdx)t.classList.add("bad");A.appendChild(t);});
+  q._tiles.forEach(o=>{
+    if(o.taken){const hl=document.createElement("div");hl.className="tile hole";hl.textContent=o.w;B.appendChild(hl);return;}
+    B.appendChild(tile(o,()=>move(o,true)));
+  });
+  const btn=$("#checkBtn"),ok=answer.length>0;btn.disabled=!ok;btn.classList.toggle("go",ok);
+}
+function tile(o,onTap){
+  const d=document.createElement("div");
+  d.className="tile"+(/^[.?!,]$/.test(o.w)?" punc":"");d.textContent=o.w;d.dataset.tid=o.id;
+  let lp,fired=false;
+  d.addEventListener("pointerdown",()=>{fired=false;lp=setTimeout(()=>{fired=true;speakWord(o.w);},450);});
+  const cx=()=>clearTimeout(lp);
+  d.addEventListener("pointerup",cx);d.addEventListener("pointercancel",cx);d.addEventListener("pointerleave",cx);
+  d.addEventListener("click",()=>{if(fired){fired=false;return;}onTap();});
+  return d;
+}
+function move(o,toAns){
+  badIdx=-1;
+  if(toAns){o.taken=true;answer.push(o);}else{o.taken=false;answer=answer.filter(x=>x!==o);}
+  draw();
+}
+function check(){
+  const q=qList[qIdx];
+  const user=answer.map(o=>o.w).join(" ");
+  const accepts=[q.t.join(" ")].concat(q.accept||[]);   // 支援多組正解
+  const ok=accepts.includes(user);
+  record(q,ok,qHinted);
+  const s=$("#sheet");
+  if(ok){
+    playSound(true);
+    if(qHinted){
+      xp+=3;
+      s.className="sheet ok show";
+      $("#sheetHd").innerHTML="✅ 完成（靠提示）· +3 XP";
+      $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b><div style="color:var(--gray-d);font-size:12px;margin-top:5px;line-height:1.5">💡 這題有用提示，先收進錯題本；之後自己拼對一次才算真的學會囉！</div>`;
+      speakCur();
+    }else{
+      correct++;xp+=10;
+      Ninja.gain(10,'pinju',{correct:1});   // 真的答對→灌進火影修行經驗
+      s.className="sheet ok show";
+      $("#sheetHd").innerHTML="✅ 答對了！ +10 XP";
+      $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>`;
+      speakCur();
+    }
+  }else{
+    playSound(false);
+    if(mode!=="review"){hp--;$("#hp").textContent=hp;}
+    // 標出第一個排錯的位置
+    badIdx=-1;
+    for(let i=0;i<Math.max(answer.length,q.t.length);i++){
+      if((answer[i]&&answer[i].w||"")!==(q.t[i]||"")){badIdx=i;break;}
+    }
+    draw();
+    $("#answer").classList.add("shake");setTimeout(()=>$("#answer").classList.remove("shake"),350);
+    s.className="sheet no show";
+    $("#sheetHd").innerHTML="❌ 正確答案是";
+    const tip=badIdx>=0?`<div style="color:var(--red);font-size:12.5px;margin-top:5px">💡 第 ${badIdx+1} 個位置開始不對，紅色框就是要改的地方</div>`:"";
+    $("#sheetSol").innerHTML=`<b>${pretty(q.t)}</b>${tip}`;
+    if(mode!=="review")qList.push(q);          // 一般模式：答錯重排到尾端
+    if(mode!=="review"&&hp<=0){setTimeout(showHeartsModal,550);}
+  }
+}
+function record(q,ok,hinted){
+  STAT.answered++; if(ok&&!hinted)STAT.correct++;   // 靠提示不計正確率
+  const M=MIST[q._qid];
+  if(!ok||hinted){                                   // 答錯 或 靠提示 → 進錯題本、之後再自己練
+    MIST[q._qid]={zh:q.zh,t:q.t,d:q.d,cat:q.cat,unit:q.unit,box:1,wrong:(M?M.wrong:0)+(ok?0:1)};
+  }else if(M){
+    M.box++; if(M.box>=6)delete MIST[q._qid];         // 連續(自己)答對畢業
+  }
+  saveM();
+}
+function nextQ(){
+  $("#sheet").className="sheet";qIdx++;
+  if(qIdx>=qList.length){finish();return;}
+  loadQ();
+}
+function localDay(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function markStreak(){
+  const d=new Date(),today=localDay(d);   // 用本地日期，避免凌晨(UTC)誤算連續天數
+  if(STAT.lastDay!==today){
+    const y=localDay(new Date(d.getTime()-864e5));
+    STAT.streak = STAT.lastDay===y ? STAT.streak+1 : 1;
+    STAT.lastDay=today;
+  }
+  STAT.days[today]=(STAT.days[today]||0)+correct;
+  saveS();
+}
+function finish(){
+  const total=qIdx, acc=Math.round(correct/total*100);
+  markStreak();
+  if(mode==="unit"){
+    const stars=acc>=90?3:acc>=70?2:1, k=curKeyInfo.key;
+    const prev=PROG[k]?.stars||0, pxp=PROG[k]?.xp||0;
+    PROG[k]={stars:Math.max(prev,stars),xp:Math.max(pxp,xp)};
+    saveP();
+    $("#doneTitle").textContent="單元完成！";
+    $("#doneEmoji").textContent=acc>=90?"🏆":acc>=70?"🎉":"💪";
+  }else{
+    $("#doneTitle").textContent="複習完成！";
+    $("#doneEmoji").textContent="🎯";
+  }
+  $("#dXp").textContent=xp;$("#dAcc").textContent=acc+"%";
+  ["learn","progress","mistakes","lesson"].forEach(s=>$("#"+s).classList.remove("on"));
+  $("#done").classList.add("on"); $("#nav").classList.add("hide");
+}
+function quit(){try{speechSynthesis.cancel();}catch(e){} curStage=curKeyInfo?curKeyInfo.si:curStage; showTab("learn");}
+
+/* ===== 聽力切換 ===== */
+function toggleListen(){SET.listen=!SET.listen;saveSet();$("#lchip").classList.toggle("on",SET.listen);applyListen(qList[qIdx]);}
+
+/* ===== 發音 + 音效 ===== */
+function speakCur(){
+  if(!window.speechSynthesis)return;
+  const q=qList[qIdx];const txt=pretty(q.t).replace(/[?.!]/g,"");
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u);
+}
+let AC=null;
+function playSound(ok){
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+    const seq=ok?[[660,0],[880,.1]]:[[200,0]];
+    seq.forEach(([f,t])=>{const o=AC.createOscillator(),g=AC.createGain();
+      o.frequency.value=f;o.type=ok?"sine":"square";o.connect(g);g.connect(AC.destination);
+      const s=AC.currentTime+t;g.gain.setValueAtTime(.001,s);g.gain.exponentialRampToValueAtTime(.25,s+.02);
+      g.gain.exponentialRampToValueAtTime(.001,s+(ok?.18:.3));o.start(s);o.stop(s+(ok?.2:.32));});
+  }catch(e){}
+}
+
+/* ===== utils ===== */
+function pretty(t){return t.join(" ").replace(/\s+([?.!,])/g,"$1");}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ===== emoji 圖示輔助 ===== */
+const EMOJI={dog:"🐶",dogs:"🐶",cat:"🐱",cats:"🐱",bird:"🐦",birds:"🐦",fish:"🐟",elephant:"🐘",
+ apple:"🍎",apples:"🍎",banana:"🍌",orange:"🍊",egg:"🥚",milk:"🥛",water:"💧",tea:"🍵",rice:"🍚",
+ cookie:"🍪",cake:"🍰",lunch:"🍱",dinner:"🍽️",breakfast:"🍳",book:"📖",books:"📖",pen:"🖊️",pens:"🖊️",
+ pencil:"✏️",pencils:"✏️",bag:"🎒",desk:"🪑",ball:"⚽",car:"🚗",bus:"🚌",bike:"🚲",train:"🚆",
+ house:"🏠",home:"🏠",school:"🏫",park:"🏞️",store:"🏪",shop:"🏪",shops:"🏪",bank:"🏦",tree:"🌳",
+ flower:"🌸",flowers:"🌸",sun:"☀️",sunny:"☀️",rain:"🌧️",rainy:"🌧️",cold:"🥶",hat:"🎩",dress:"👗",
+ sister:"👧",brother:"👦",mother:"👩",mom:"👩",father:"👨",dad:"👨",teacher:"🧑‍🏫",student:"🧑‍🎓",
+ friend:"🧑‍🤝‍🧑",friends:"🧑‍🤝‍🧑",doctor:"🧑‍⚕️",nurse:"👩‍⚕️",swim:"🏊",run:"🏃",sing:"🎤",dance:"💃",
+ jump:"🤸",sleep:"😴",read:"📖",play:"🎮",happy:"😊",sad:"😢",tired:"😫",dollars:"💵",money:"💰",
+ red:"🔴",blue:"🔵",green:"🟢",yellow:"🟡",black:"⚫",white:"⚪",star:"⭐",stars:"⭐"};
+function setQEmoji(q){
+  const el=$("#qemoji");
+  if(SET.listen){el.textContent="";return;}
+  let found="";
+  for(const w of q.t){const k=w.toLowerCase().replace(/[^a-z']/g,"");if(EMOJI[k]){found=EMOJI[k];break;}}
+  el.textContent=found;
+}
+/* ===== 單字發音（長按詞塊）===== */
+function speakWord(w){
+  if(!window.speechSynthesis||/^[.?!,]$/.test(w))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(w);u.lang="en-US";u.rate=.75;speechSynthesis.speak(u);
+}
+/* ===== 提示：高亮下一個正確詞塊（不代填），每題限1次，用了這題不計正確率 ===== */
+function hint(){
+  if(qHinted)return;                       // 每題限1次
+  const q=qList[qIdx];
+  const need=q.t[answer.length];
+  if(need===undefined)return;
+  const o=q._tiles.find(x=>!x.taken&&x.w===need);
+  if(!o)return;
+  qHinted=true; updateHintBtn();
+  glowTile(o.id);                          // 只閃給你看，還是要自己點
+}
+function glowTile(tid){
+  const el=document.querySelector('#bank [data-tid="'+tid+'"]');
+  if(!el)return;
+  el.classList.add("glow");
+  el.scrollIntoView({block:"nearest",behavior:"smooth"});
+  setTimeout(()=>{el&&el.classList.remove("glow");},2600);
+}
+function updateHintBtn(){
+  const b=$("#hintBtn"); if(!b)return;
+  b.disabled=qHinted;
+  b.innerHTML=qHinted?"💡 已用提示":"💡 提示";
+}
+/* ===== 愛心用完彈窗 ===== */
+function showHeartsModal(){$("#modal").classList.add("show");}
+function modalContinue(){hp=5;$("#hp").textContent=hp;$("#modal").classList.remove("show");$("#sheet").className="sheet";nextQ();}
+function modalQuit(){$("#modal").classList.remove("show");quit();}
+
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+renderLearn();
+
+/* ===== 安裝到桌面 (PWA) ===== */
+let deferredPrompt=null;
+function isStandalone(){return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+function isIOSDevice(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstallBar();});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;renderInstallBar();});
+function renderInstallBar(){var el=document.getElementById("installBar");if(!el)return;
+  var learn=document.getElementById("learn"),onLearn=learn&&learn.classList.contains("on");
+  if(isStandalone()||!onLearn){el.innerHTML="";return;}
+  if(deferredPrompt){el.innerHTML='<button class="install-btn" onclick="doInstall()">📲 安裝到桌面（免開瀏覽器） ➕</button>';}
+  else if(isIOSDevice()){el.innerHTML='<button class="install-btn sec" onclick="showIOSInstall()">📲 安裝到主畫面（iPad / iPhone） ›</button>';}
+  else{el.innerHTML="";}}
+function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.finally(function(){deferredPrompt=null;renderInstallBar();});}
+function showIOSInstall(){var el=document.getElementById("installBar");if(!el)return;el.innerHTML='<div class="install-tip">📲 <b>加到 iPad / iPhone 桌面：</b><br>1. 用 <b>Safari</b> 開啟本頁<br>2. 點「分享 ⬆️」<br>3. 往下找「<b>加入主畫面 ➕</b>」<br>4. 右上按「新增」完成<br><span class="install-x" onclick="renderInstallBar()">知道了 ✓</span></div>';}
+renderInstallBar();
+</script>
+<script>/*ENGREVIEW*/(function(){if(window.EngReview)return;
+var WK='engreview.wrong',VK='engreview.words',APP={"id": "englishS", "name": "國中英語句型"};
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}}}
+function save(k,o){try{localStorage.setItem(k,JSON.stringify(o))}catch(e){}}
+function hash(s){var h=0,i;for(i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return(h>>>0).toString(36)}
+function now(){return Date.now()}
+var BOX=[0,1,3,7,16,40];
+function addWrong(r){var w=load(WK);var id=hash((r.app||APP.id)+'|'+r.stem+'|'+(r.options||[]).join('~'));var e=w[id]||{id:id,first:now(),n:0};
+ e.app=r.app||APP.id;e.appName=r.appName||APP.name;e.cat=r.cat||'其他';e.stem=r.stem;e.options=r.options;e.your=r.your;e.ans=r.ans;e.expl=r.expl||'';
+ e.box=0;e.streak=0;e.due=now();e.n=(e.n||0)+1;e.ts=now();w[id]=e;save(WK,w);}
+function graded(id,ok){var w=load(WK),e=w[id];if(!e)return;if(ok){e.streak=(e.streak||0)+1;e.box=Math.min((e.box||0)+1,BOX.length-1);if(e.streak>=2){delete w[id];save(WK,w);return;}e.due=now()+BOX[e.box]*86400000;}else{e.streak=0;e.box=0;e.due=now();}e.ts=now();w[id]=e;save(WK,w);}
+function addWord(word,zh,pos,cat){var v=load(VK),k=String(word||'').toLowerCase().trim();if(!k)return false;
+ if(!v[k]){v[k]={word:word,zh:zh||'（待查）',pos:pos||'',app:APP.id,appName:APP.name,cat:cat||'',box:0,streak:0,due:now(),ts:now()};save(VK,v);return true;}
+ else{if((!v[k].zh||v[k].zh==='（待查）')&&zh){v[k].zh=zh;save(VK,v);}return false;}}
+function setWordZh(word,zh){var v=load(VK),k=String(word).toLowerCase();if(v[k]){v[k].zh=zh;v[k].box=0;save(VK,v);}}
+function wordGraded(word,ok){var v=load(VK),k=String(word).toLowerCase(),e=v[k];if(!e)return;if(ok){e.streak=(e.streak||0)+1;e.box=Math.min((e.box||0)+1,BOX.length-1);if(e.streak>=2){e.mastered=1;}e.due=now()+BOX[e.box]*86400000;}else{e.streak=0;e.box=0;e.mastered=0;e.due=now();}save(VK,v);}
+function removeWord(word){var v=load(VK);delete v[String(word).toLowerCase()];save(VK,v);}
+function cnt(o,due){var n=0,k;for(k in o){if(!due||o[k].due<=now())n++;}return n;}
+window.EngReview={app:APP,addWrong:addWrong,graded:graded,addWord:addWord,setWordZh:setWordZh,wordGraded:wordGraded,removeWord:removeWord,
+ wrong:function(){return load(WK)},words:function(){return load(VK)},
+ wrongCount:function(d){return cnt(load(WK),d)},wordCount:function(d){return cnt(load(VK),d)}};
+})();</script>
+<script>/*ENGWC*/(function(){if(window.__engwc)return;window.__engwc=1;
+var CFG={"ns": "englishS", "emoji": "🧩", "title": "國中英語句型", "theme": "#1f8fd6", "tagline": "多鄰國式拼句・邊玩邊練語感", "steps": [["🧩", "拼出正確句子", "把打散的字詞排成正確的英文句子。"], ["💡", "提示與發音", "卡住可看提示，長按單字聽發音。"], ["🏆", "逐關解鎖", "從簡單到難，一關一關破。"], ["📲", "安裝到桌面", "裝起來離線玩。"]], "hub": "https://fullmodel-star.github.io/english-apps/"};var K='engwc.'+CFG.ns+'.done';
+var css='.engwc-ov{position:fixed;inset:0;background:rgba(28,28,40,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:2147483000;display:none;align-items:center;justify-content:center;padding:18px}'
++'.engwc-ov.show{display:flex}'
++'.engwc-card{background:#fff;color:#2a2a33;border-radius:22px;max-width:400px;width:100%;padding:24px 22px 20px;box-shadow:0 20px 55px rgba(0,0,0,.35);max-height:88vh;overflow:auto;font-family:-apple-system,\"PingFang TC\",\"Microsoft JhengHei\",system-ui,sans-serif;animation:engwcIn .25s ease}'
++'@keyframes engwcIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}'
++'.engwc-emoji{font-size:46px;text-align:center;line-height:1}'
++'.engwc-h{text-align:center;margin:8px 0 2px;font-size:21px;font-weight:800}'
++'.engwc-sub{text-align:center;color:#7a7a86;font-size:13.5px;margin-bottom:15px;line-height:1.5}'
++'.engwc-step{display:flex;gap:11px;align-items:flex-start;background:#f7f7fa;border:1px solid #ececf0;border-radius:13px;padding:10px 12px;margin-bottom:8px}'
++'.engwc-i{font-size:21px;flex:0 0 auto;line-height:1.3}'
++'.engwc-step b{font-size:14.5px}.engwc-step>div>div{font-size:12.5px;color:#7a7a86;line-height:1.5;margin-top:1px}'
++'.engwc-start{width:100%;border:0;border-radius:14px;padding:13px;font-size:15.5px;font-weight:800;color:#fff;background:'+CFG.theme+';cursor:pointer;margin-top:8px;font-family:inherit}'
++'.engwc-help{position:fixed;left:calc(12px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:2147482000;width:40px;height:40px;border-radius:50%;border:1px solid #e2e2ea;background:rgba(255,255,255,.94);color:#666;font-size:18px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.18);padding:0}'
++'.engwc-home{position:fixed;left:calc(60px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:2147482000;height:40px;border-radius:20px;border:1px solid #e2e2ea;background:rgba(255,255,255,.94);color:#555;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.18);padding:0 13px}';
+var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+var steps=CFG.steps.map(function(s){return '<div class=\"engwc-step\"><span class=\"engwc-i\">'+s[0]+'</span><div><b>'+s[1]+'</b><div>'+s[2]+'</div></div></div>';}).join('');
+var ov=document.createElement('div');ov.className='engwc-ov';
+ov.innerHTML='<div class=\"engwc-card\"><div class=\"engwc-emoji\">'+CFG.emoji+'</div><div class=\"engwc-h\">歡迎使用 '+CFG.title+'</div><div class=\"engwc-sub\">'+CFG.tagline+'</div>'+steps+'<button class=\"engwc-start\">開始使用 ▶</button></div>';
+document.body.appendChild(ov);
+var hb=document.createElement('button');hb.className='engwc-help';hb.setAttribute('aria-label','使用說明');hb.textContent='❓';document.body.appendChild(hb);
+if(CFG.hub){var hm=document.createElement('button');hm.className='engwc-home';hm.setAttribute('aria-label','回入口');hm.innerHTML='⬅ 入口';hm.addEventListener('click',function(){window.__engHubDefault=CFG.hub;if(window.__engGoHub)window.__engGoHub();else location.href=CFG.hub;});document.body.appendChild(hm);}
+function show(){ov.classList.add('show');}function close(){ov.classList.remove('show');try{localStorage.setItem(K,'1');}catch(e){}}
+ov.querySelector('.engwc-start').addEventListener('click',close);
+ov.addEventListener('click',close);
+hb.addEventListener('click',show);
+try{if(!localStorage.getItem(K)){var __t=setTimeout(show,0);var __cancel=function(){clearTimeout(__t);document.removeEventListener('pointerdown',__cancel,true);};document.addEventListener('pointerdown',__cancel,{capture:true,once:true});}}catch(e){setTimeout(show,0);}
+})();</script>
+<script>/*REVIEWUI*/(function(){if(window.__rvc)return;window.__rvc=1;
+var R=window.EngReview;if(!R){return;}
+var MYID=R.app.id, ISHUB=(MYID==='english-hub');
+var NSMAP={"english1200": {"name": "國小1200單字", "url": "https://fullmodel-star.github.io/english1200/"}, "english2000": {"name": "國中2000單字", "url": "https://fullmodel-star.github.io/english2000/"}, "english6000": {"name": "高中6000單字", "url": "https://fullmodel-star.github.io/english6000/"}, "gsat-core": {"name": "學測必考單字", "url": "https://fullmodel-star.github.io/gsat-core/"}, "toeic-vocab": {"name": "多益單字", "url": "https://fullmodel-star.github.io/toeic-vocab/"}, "toefl-vocab": {"name": "托福單字", "url": "https://fullmodel-star.github.io/toefl-vocab/"}, "englishS": {"name": "國中英語句型", "url": "https://fullmodel-star.github.io/englishS/"}, "enghs": {"name": "高中英語文法", "url": "https://fullmodel-star.github.io/hs-grammar/"}, "english-phrases": {"name": "英語片語", "url": "https://fullmodel-star.github.io/english-phrases/"}, "cap-english": {"name": "國中會考複習", "url": "https://fullmodel-star.github.io/cap-english/"}, "gsat-english": {"name": "學測複習", "url": "https://fullmodel-star.github.io/gsat-english/"}, "cap-qbank": {"name": "會考英語題庫", "url": "https://fullmodel-star.github.io/cap-qbank/"}, "gsat-qbank": {"name": "學測英語題庫", "url": "https://fullmodel-star.github.io/gsat-qbank/"}, "travel-english": {"name": "旅遊英文", "url": "https://fullmodel-star.github.io/travel-english/"}, "family-english": {"name": "家庭生活英語", "url": "https://fullmodel-star.github.io/family-english/"}, "campus-english": {"name": "校園生活英語", "url": "https://fullmodel-star.github.io/campus-english/"}, "errand-english": {"name": "生活辦事英文", "url": "https://fullmodel-star.github.io/errand-english/"}, "social-english": {"name": "社交英文", "url": "https://fullmodel-star.github.io/social-english/"}};
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function speak(t){try{var u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+var L=['A','B','C','D','E','F'],NOW=Date.now();
+var css=''
++'.rvc-fab{position:fixed;left:calc(12px + env(safe-area-inset-left));bottom:calc(124px + env(safe-area-inset-bottom));z-index:2147482500;height:40px;border-radius:20px;border:0;background:#6d28d9;color:#fff;font-size:13.5px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(109,40,217,.4);padding:0 14px;font-family:inherit;display:none}'
++'.rvc-fab .bdg{background:#fff;color:#6d28d9;border-radius:10px;padding:0 6px;margin-left:6px;font-size:12px}'
++'.rvc-card{background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;border-radius:20px;padding:16px 18px;margin:18px 0 6px;box-shadow:0 10px 26px rgba(109,40,217,.28)}'
++'.rvc-card h3{margin:0 0 3px;font-size:16px}.rvc-card .rvc-sub{font-size:12.5px;opacity:.92;margin-bottom:12px}'
++'.rvc-approw{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.15);border-radius:12px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:#fff}'
++'.rvc-approw .an{font-weight:800;font-size:14px}.rvc-approw .am{font-size:11.5px;opacity:.9}.rvc-approw .ag{margin-left:auto;font-weight:800;font-size:12.5px}'
++'.rvc-none{font-size:13px;opacity:.9;line-height:1.8}'
++'.rvc-ov{position:fixed;inset:0;background:rgba(20,20,32,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:2147483600;display:flex;align-items:flex-end;justify-content:center}'
++'.rvc-sheet{background:#f5f7fb;color:#1e2a48;width:100%;max-width:600px;max-height:92vh;border-radius:22px 22px 0 0;overflow:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));font-family:-apple-system,\"PingFang TC\",\"Microsoft JhengHei\",sans-serif}'
++'.rvc-hd{display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#f5f7fb;padding:4px 0 10px;z-index:2}'
++'.rvc-hd h2{font-size:18px;margin:0;flex:1}.rvc-x{border:0;background:rgba(0,0,0,.06);border-radius:50%;width:34px;height:34px;font-size:17px;cursor:pointer}'
++'.rvc-tab{display:flex;gap:8px;margin-bottom:10px}.rvc-tab button{flex:1;border:1.5px solid #e6ebf7;background:#fff;border-radius:11px;padding:9px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}.rvc-tab button.on{background:#6d28d9;color:#fff;border-color:transparent}'
++'.rvc-grp{font-weight:800;font-size:13px;color:#666;margin:12px 2px 6px}'
++'.rvc-item{background:#fff;border:1px solid #e6ebf7;border-radius:13px;padding:11px 13px;margin-bottom:9px}'
++'.rvc-q{font-weight:600;font-size:14.5px;line-height:1.5}'
++'.rvc-opt{border:1.5px solid #e6ebf7;border-radius:11px;padding:9px 12px;margin-top:7px;cursor:pointer;font-size:14.5px;display:flex;gap:8px;background:#fff}'
++'.rvc-opt .lb{font-weight:800;color:#888}.rvc-opt.ok{background:#e7f8ee;border-color:#37b36b}.rvc-opt.no{background:#fdecec;border-color:#e15656}'
++'.rvc-exp{background:#f0f5ff;border-left:3px solid #4f6ef7;border-radius:8px;padding:9px 11px;margin-top:8px;font-size:13px;line-height:1.6}'
++'.rvc-word{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e6ebf7;border-radius:12px;padding:10px 12px;margin-bottom:8px}'
++'.rvc-word .w{font-weight:800;font-size:15.5px}.rvc-word .z{font-size:13.5px;color:#666}.rvc-word .src{font-size:10.5px;color:#9aa;margin-left:auto;white-space:nowrap}'
++'.rvc-ic{border:0;background:#eef2ff;border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer;flex:0 0 auto}'
++'.rvc-primary{width:100%;border:0;border-radius:14px;padding:14px;font-size:15.5px;font-weight:800;color:#fff;background:#6d28d9;cursor:pointer;margin:8px 0;font-family:inherit}'
++'.rvc-flash{background:#fff;border:1px solid #e6ebf7;border-radius:18px;padding:34px 18px;text-align:center;margin:10px 0;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.06)}'
++'.rvc-flash .fw{font-size:30px;font-weight:800}.rvc-flash .fz{font-size:20px;margin-top:12px;color:#6d28d9}'
++'.rvc-grade{display:grid;grid-template-columns:1fr 1fr;gap:10px}.rvc-grade button{border:0;border-radius:13px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}'
++'.rvc-bad{background:#fdecec;color:#c0392b}.rvc-good{background:#e7f8ee;color:#1e8e4e}'
++'.rvc-empty{text-align:center;color:#888;padding:26px;font-size:14px;line-height:1.9}';
+var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+
+function ownWrong(){var w=R.wrong(),o=[];for(var k in w){if(w[k].app===MYID)o.push(w[k]);}return o;}
+function ownWords(){var v=R.words(),o=[];for(var k in v){if(v[k].app===MYID)o.push(v[k]);}return o;}
+function due(a){return a.filter(function(x){return x.due<=NOW;});}
+
+function ov(title,inner){var o=document.createElement('div');o.className='rvc-ov';
+  o.innerHTML='<div class=\"rvc-sheet\"><div class=\"rvc-hd\"><h2>'+title+'</h2><button class=\"rvc-x\">✕</button></div><div class=\"rvc-body\">'+inner+'</div></div>';
+  o.addEventListener('click',function(e){if(e.target===o)o.remove();});
+  o.querySelector('.rvc-x').addEventListener('click',function(){o.remove();refreshFab();});
+  document.body.appendChild(o);return o;}
+
+/* ===== 一般 App：只複習自己的 ===== */
+function refreshFab(){var fab=document.getElementById('rvcFab');if(!fab)return;
+  var dw=due(ownWrong()).length, dv=due(ownWords()).length, tot=dw+dv;
+  if(tot>0){fab.style.display='inline-flex';fab.innerHTML='📝 複習<span class=\"bdg\">'+tot+'</span>';}else{fab.style.display='none';}}
+function openSelf(){
+  var W=ownWrong(),V=ownWords();
+  var h='<div class=\"rvc-tab\"><button class=\"on\" data-t=\"w\">📕 錯題 '+W.length+'</button><button data-t=\"v\">📘 生字 '+V.length+'</button></div><div id=\"rvcPane\"></div>';
+  var o=ov('📝 我的複習',h);
+  var pane=o.querySelector('#rvcPane');
+  o.querySelectorAll('.rvc-tab button').forEach(function(b){b.addEventListener('click',function(){o.querySelectorAll('.rvc-tab button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');paint(b.dataset.t);});});
+  function paint(t){if(t==='v')paintWords(pane,V,o);else paintWrong(pane,W,o);}
+  paint('w');
+}
+function paintWrong(pane,W,o){
+  if(!W.length){pane.innerHTML='<div class=\"rvc-empty\">目前沒有錯題 🎉<br>練習答錯的題目會自動收進這裡。</div>';return;}
+  var d=due(W);
+  var grp={};W.forEach(function(e){(grp[e.cat||'其他']=grp[e.cat||'其他']||[]).push(e);});
+  var h='<button class=\"rvc-primary\" '+(d.length?'':'disabled style=opacity:.5')+' id=\"rvcQz\">▶ 重考待複習錯題（'+d.length+'）</button>';
+  Object.keys(grp).forEach(function(g){h+='<div class=\"rvc-grp\">'+esc(g)+'（'+grp[g].length+'）</div>';
+    grp[g].forEach(function(e){h+='<div class=\"rvc-item\"><div class=\"rvc-q\">'+esc(e.stem)+'</div><div class=\"rvc-exp\"><b>✅ 正解 '+L[e.ans]+'：</b>'+esc((e.options||[])[e.ans]||'')+'　'+esc(e.expl||'')+'</div></div>';});});
+  pane.innerHTML=h;
+  var qz=pane.querySelector('#rvcQz');if(qz&&d.length)qz.addEventListener('click',function(){startQuiz(d,o);});
+}
+function startQuiz(pool,parent){
+  parent.remove();var i=0,right=0;var o=ov('📕 重考錯題（'+pool.length+'）','<div id=\"rvcQ\"></div>');
+  function draw(){var box=o.querySelector('#rvcQ');if(i>=pool.length){box.innerHTML='<div class=\"rvc-empty\">複習完成！答對 '+right+'/'+pool.length+'<br>連對 2 次的題目會自動畢業 🎓</div><button class=\"rvc-primary\">完成</button>';box.querySelector('button').addEventListener('click',function(){o.remove();refreshFab();});return;}
+    var e=pool[i];var h='<div class=\"rvc-item\"><div class=\"rvc-q\">'+(i+1)+'. '+esc(e.stem)+'</div>';
+    (e.options||[]).forEach(function(op,oi){h+='<div class=\"rvc-opt\" data-i=\"'+oi+'\"><span class=\"lb\">'+L[oi]+'</span><span>'+esc(op)+'</span></div>';});
+    h+='<div id=\"rvcFb\"></div></div>';box.innerHTML=h;
+    box.querySelectorAll('.rvc-opt').forEach(function(el){el.addEventListener('click',function(){
+      if(box.dataset.done)return;box.dataset.done='1';var pick=+el.dataset.i,ok=pick===e.ans;
+      box.querySelectorAll('.rvc-opt').forEach(function(x){var xi=+x.dataset.i;if(xi===e.ans)x.classList.add('ok');else if(xi===pick)x.classList.add('no');});
+      R.graded(e.id,ok);if(ok)right++;
+      box.querySelector('#rvcFb').innerHTML='<div class=\"rvc-exp\"><b>'+(ok?'✅ 答對':'❌ 答錯')+'・正解 '+L[e.ans]+'：</b>'+esc(e.expl||'')+'</div><button class=\"rvc-primary\">下一題 ▶</button>';
+      box.querySelector('#rvcFb button').addEventListener('click',function(){i++;delete box.dataset.done;draw();});
+    });});}
+  draw();
+}
+function paintWords(pane,V,o){
+  if(!V.length){pane.innerHTML='<div class=\"rvc-empty\">還沒有生字 📖<br>閱讀或做題時點不會的單字，就會收進這裡。</div>';return;}
+  var h='<button class=\"rvc-primary\" id=\"rvcFl\">🃏 翻卡複習（'+V.length+'）</button>';
+  V.forEach(function(e,idx){h+='<div class=\"rvc-word\"><div><div class=\"w\">'+esc(e.word)+' <span style=\"font-size:11px;color:#9aa\">'+esc(e.pos||'')+'</span></div><div class=\"z\">'+esc(e.zh)+'</div></div><span class=\"src\">'+esc(e.cat||'')+'</span>'
+    +'<button class=\"rvc-ic\" data-say=\"'+esc(e.word)+'\">🔊</button>'
+    +((!e.zh||e.zh==='（待查）')?'<button class=\"rvc-ic\" data-fill=\"'+esc(e.word)+'\">✏️</button>':'')
+    +'<button class=\"rvc-ic\" data-del=\"'+esc(e.word)+'\">🗑️</button></div>';});
+  pane.innerHTML=h;
+  pane.querySelector('#rvcFl').addEventListener('click',function(){startFlash(V,o);});
+  pane.querySelectorAll('[data-say]').forEach(function(b){b.addEventListener('click',function(){speak(b.dataset.say);});});
+  pane.querySelectorAll('[data-fill]').forEach(function(b){b.addEventListener('click',function(){var w=b.dataset.fill,zh=prompt('輸入「'+w+'」的中文意思：');if(zh&&zh.trim()){R.setWordZh(w,zh.trim());o.remove();openSelf();}});});
+  pane.querySelectorAll('[data-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('移除生字「'+b.dataset.del+'」？')){R.removeWord(b.dataset.del);o.remove();openSelf();}});});
+}
+function startFlash(V,parent){
+  parent.remove();var i=0;var o=ov('🃏 生字翻卡','<div id=\"rvcF\"></div>');
+  function draw(){var box=o.querySelector('#rvcF');if(i>=V.length){box.innerHTML='<div class=\"rvc-empty\">複習完成！👏</div><button class=\"rvc-primary\">完成</button>';box.querySelector('button').addEventListener('click',function(){o.remove();refreshFab();});return;}
+    var e=V[i];box.innerHTML='<div class=\"rvc-flash\" id=\"cf\"><div class=\"fw\">'+esc(e.word)+'</div><div style=\"font-size:12px;color:#9aa;margin-top:6px\">點卡片看中文・🔊</div></div>';
+    var flip=false,cf=box.querySelector('#cf');
+    cf.addEventListener('click',function(){if(!flip){flip=true;cf.innerHTML='<div class=\"fw\">'+esc(e.word)+'</div><div class=\"fz\">'+esc(e.zh)+'</div>';speak(e.word);
+      var g=document.createElement('div');g.className='rvc-grade';g.innerHTML='<button class=\"rvc-bad\">還不熟</button><button class=\"rvc-good\">記得了</button>';box.appendChild(g);
+      g.children[0].addEventListener('click',function(){R.wordGraded(e.word,false);i++;draw();});
+      g.children[1].addEventListener('click',function(){R.wordGraded(e.word,true);i++;draw();});
+    }else speak(e.word);});}
+  draw();
+}
+function mountSelf(){var fab=document.createElement('button');fab.id='rvcFab';fab.className='rvc-fab';fab.addEventListener('click',openSelf);document.body.appendChild(fab);refreshFab();}
+
+/* ===== Hub：只總覽 ===== */
+function mountOverview(){
+  var host=document.getElementById('dash');var card=document.createElement('div');card.className='rvc-card';card.id='rvcCard';
+  if(host&&host.parentNode)host.parentNode.insertBefore(card,host.nextSibling);else document.body.insertBefore(card,document.body.firstChild);
+  var w=R.wrong(),v=R.words();var per={};
+  function acc(id,kind){if(!NSMAP[id])return;per[id]=per[id]||{w:0,v:0};per[id][kind]++;}
+  for(var k in w){if(w[k].due<=NOW)acc(w[k].app,'w');}
+  for(var k2 in v){if(v[k2].due<=NOW)acc(v[k2].app,'v');}
+  var ids=Object.keys(per);
+  var h='<h3>📝 我的複習</h3>';
+  if(!ids.length){h+='<div class=\"rvc-none\">目前沒有待複習的錯題或生字 🎉<br>去各 App 練習，答錯的題目、閱讀點的生字，會分別留在<b>那支 App</b> 裡等你複習。</div>';}
+  else{h+='<div class=\"rvc-sub\">點進該 App 複習自己的錯題與生字（各程度分開，不混在一起）</div>';
+    ids.forEach(function(id){var m=NSMAP[id],p=per[id];h+='<a class=\"rvc-approw\" href=\"'+m.url+'\"><div><div class=\"an\">'+esc(m.name)+'</div><div class=\"am\">'+(p.w?'錯題 '+p.w+' 題':'')+(p.w&&p.v?'・':'')+(p.v?'生字 '+p.v+' 個':'')+'</div></div><span class=\"ag\">去複習 ▶</span></a>';});}
+  card.innerHTML=h;
+}
+
+if(ISHUB){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountOverview);else mountOverview();}
+else{if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountSelf);else mountSelf();}
+})();</script>
+<!-- 版本更新提示（家族共用模組 fam-update v1）-->
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)||window.__famUpd)return; window.__famUpd=1;
+  var reg=null, shown=false, refreshing=false, watched=false;
+  function mkBanner(){
+    if(document.getElementById('famUpdateBanner'))return;
+    var b=document.createElement('div'); b.id='famUpdateBanner';
+    b.setAttribute('style','position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483000;max-width:520px;margin:0 auto;background:linear-gradient(135deg,#16a34a,#0d9488);color:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 8px 26px rgba(16,163,74,.45);display:flex;align-items:center;gap:10px;font:600 14px/1.4 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif');
+    b.innerHTML='<div style="flex:1"><b>🎉 有新版本可用</b><br><span style="font-size:12.5px;font-weight:400;opacity:.95">點「立即更新」套用最新版</span></div><button id="famUpdGo" style="background:#fff;color:#0d9488;border:0;border-radius:10px;padding:8px 15px;font:800 13.5px system-ui,sans-serif;cursor:pointer">立即更新</button><button id="famUpdX" aria-label="close" style="background:rgba(255,255,255,.22);border:0;color:#fff;width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer">✕</button>';
+    (document.body||document.documentElement).appendChild(b);
+    document.getElementById('famUpdX').onclick=function(){b.remove()};
+    document.getElementById('famUpdGo').onclick=function(){
+      var w=reg&&reg.waiting;
+      if(w){['SKIP_WAITING','skipWaiting',{type:'SKIP_WAITING'}].forEach(function(m){try{w.postMessage(m)}catch(e){}});b.remove();setTimeout(function(){if(!refreshing){refreshing=true;location.reload();}},1800);}
+      else location.reload();
+    };
+  }
+  function show(){if(shown)return;shown=true;mkBanner();}
+  function watch(r){
+    if(!r||watched)return; watched=true; reg=r;
+    if(r.waiting&&navigator.serviceWorker.controller)show();
+    r.addEventListener('updatefound',function(){var nw=r.installing;if(!nw)return;
+      nw.addEventListener('statechange',function(){if(nw.state==='installed'&&navigator.serviceWorker.controller)show();});});
+    try{setInterval(function(){r.update().catch(function(){});},30*60*1000);}catch(e){}
+  }
+  navigator.serviceWorker.getRegistration().then(watch).catch(function(){});
+  navigator.serviceWorker.ready.then(watch).catch(function(){});
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(refreshing)return;refreshing=true;location.reload();});
+})();
+</script>
+<!--RIDGELINE_BRAND_START--><!-- 稜線識別 v3：頁尾簽名改用 .rl-signature，掛入當前捲動頁底部（本 App 為 100dvh 分頁殼，非整頁捲動）。以下僅保留家長後台同步模組。 -->
+<footer class="rl-signature" id="rlSig" style="display:none">
+  <div class="rl-sig-row">
+    <svg class="rl-sig-glyph" viewBox="0 0 2536.000000 1287.000000" width="66" height="34" fill="currentColor" aria-label="玉山" style="overflow:visible"><g transform="translate(0.000000,1287.000000) scale(0.100000,-0.100000)"
+fill="currentColor" stroke="none">
+<path d="M14345 12615 c-33 -7 -71 -18 -85 -23 l-25 -10 3 -408 2 -408 106
+186 c58 102 115 196 125 207 40 43 57 36 383 -163 185 -113 244 -156 307 -222
+43 -45 285 -399 321 -469 27 -52 77 -203 145 -435 60 -207 66 -233 66 -320 0
+-110 -18 -188 -92 -396 -128 -362 -282 -654 -645 -1223 -229 -358 -510 -820
+-639 -1047 -61 -108 -128 -267 -166 -395 -29 -93 -110 -488 -275 -1325 -62
+-315 -99 -445 -150 -520 -41 -60 -60 -76 -271 -219 -223 -152 -342 -240 -400
+-299 -72 -72 -181 -212 -335 -426 -73 -102 -161 -222 -197 -267 l-63 -82 -45
+30 c-90 61 -160 83 -265 83 -87 0 -105 -3 -215 -43 -153 -55 -271 -87 -360
+-96 l-70 -7 -110 103 c-235 219 -584 512 -727 610 -125 86 -277 156 -365 169
+-80 13 -161 2 -244 -31 -113 -44 -337 -197 -919 -627 -96 -72 -176 -129 -178
+-127 -6 6 74 168 245 495 99 190 278 539 398 775 120 237 235 457 255 491 66
+109 143 194 278 306 201 167 275 264 353 459 38 96 108 349 122 444 l6 40
+-152 -2 -152 -2 -26 -103 c-80 -318 -153 -443 -356 -604 -225 -179 -324 -316
+-533 -734 -45 -91 -133 -262 -195 -380 -62 -118 -254 -489 -426 -823 l-314
+-608 -30 6 c-166 33 -664 85 -837 87 -251 3 -359 -44 -898 -395 -134 -88 -299
+-192 -365 -232 -112 -68 -425 -229 -560 -290 -168 -75 -588 -232 -1005 -375
+-659 -227 -1231 -462 -1805 -744 -300 -148 -345 -178 -345 -231 0 -13 8 -31
+17 -40 27 -27 93 -14 248 49 645 265 879 351 1760 646 896 300 1077 365 1315
+472 301 136 491 245 884 508 513 344 568 368 801 357 109 -5 402 -40 600 -70
+l78 -12 -99 -80 c-320 -260 -469 -337 -999 -521 -331 -115 -434 -164 -590
+-281 -227 -169 -745 -611 -862 -736 -39 -41 -53 -64 -53 -84 0 -61 47 -69 118
+-21 26 18 144 107 262 198 301 232 517 392 630 466 188 123 294 167 633 259
+498 136 736 263 1167 620 309 257 632 502 1174 894 28 19 47 29 44 21 -4 -8
+-20 -46 -37 -85 -17 -38 -79 -209 -137 -380 -115 -336 -159 -450 -253 -652
+-46 -100 -61 -143 -61 -177 0 -50 19 -76 55 -76 78 0 309 399 483 835 198 494
+296 688 391 779 51 49 102 37 266 -59 230 -135 529 -390 1103 -940 109 -104
+267 -255 352 -335 188 -178 275 -280 488 -579 92 -128 179 -244 195 -257 38
+-32 82 -32 102 0 14 20 14 31 5 67 -15 56 -171 367 -256 511 -165 279 -237
+367 -509 621 -88 82 -161 153 -163 157 -1 4 68 29 155 56 122 38 173 49 224
+49 62 0 69 -2 125 -45 32 -24 100 -85 149 -134 307 -307 648 -615 805 -730 92
+-67 248 -141 360 -172 52 -14 145 -41 206 -60 190 -60 323 -155 624 -449 282
+-275 418 -389 528 -443 28 -15 52 -29 52 -32 0 -7 -112 -88 -230 -167 -175
+-117 -379 -231 -765 -427 -226 -115 -502 -257 -615 -316 -113 -59 -459 -236
+-770 -392 -311 -157 -590 -300 -620 -318 -142 -84 -181 -130 -159 -188 27 -71
+77 -85 177 -52 79 27 463 189 682 288 85 38 184 82 220 97 127 53 1209 535
+1432 638 365 168 682 351 999 578 324 232 670 500 1054 814 312 256 408 317
+552 349 85 19 211 21 320 4 64 -9 74 -13 59 -22 -123 -74 -329 -276 -506 -496
+-291 -362 -520 -590 -888 -883 -113 -90 -162 -143 -162 -174 0 -17 37 -53 54
+-53 16 0 268 163 416 269 273 195 436 340 732 649 114 119 249 254 300 300
+114 101 286 218 393 268 136 63 184 60 743 -51 68 -14 207 -37 310 -52 164
+-23 213 -26 397 -23 584 8 632 6 728 -23 96 -30 406 -161 707 -300 636 -293
+1458 -646 1880 -807 91 -35 234 -90 317 -122 242 -93 403 -148 432 -148 34 0
+48 10 59 41 25 64 -35 116 -253 219 -236 112 -523 253 -1405 693 -1019 507
+-1063 528 -1314 636 -379 164 -434 175 -831 172 -326 -2 -400 4 -669 59 -254
+51 -230 39 -301 149 -34 53 -99 161 -145 241 -232 405 -347 577 -455 685 -105
+105 -208 173 -700 465 -225 133 -489 295 -585 358 -345 229 -377 285 -515 917
+-97 442 -112 491 -304 970 -259 646 -328 891 -416 1490 -39 267 -52 219 146
+547 112 185 217 376 305 554 74 149 134 276 134 282 0 26 19 10 35 -30 31 -77
+215 -630 260 -783 24 -82 71 -253 104 -380 33 -126 83 -311 110 -410 28 -99
+98 -355 157 -570 58 -214 121 -439 141 -500 71 -223 181 -408 285 -478 81 -54
+140 -68 323 -74 88 -2 172 -9 187 -15 38 -14 60 -53 121 -219 90 -242 207
+-456 353 -649 99 -130 352 -392 631 -654 322 -301 401 -394 689 -810 99 -143
+192 -267 206 -275 32 -18 73 -8 93 23 15 23 14 29 -26 108 -71 141 -178 325
+-289 499 -181 280 -218 325 -588 713 -334 349 -385 409 -513 598 -131 196
+-206 347 -284 573 -79 231 -171 338 -330 384 -22 7 -118 16 -214 21 l-173 8
+-35 34 c-73 70 -134 240 -307 858 -58 206 -146 530 -196 720 -177 671 -309
+1101 -473 1545 -46 127 -89 243 -94 258 -5 19 -4 63 5 125 14 106 10 214 -13
+324 -9 39 -14 73 -12 75 6 5 248 -148 328 -208 115 -85 127 -105 235 -377 53
+-136 136 -339 184 -452 48 -113 113 -266 145 -340 138 -328 331 -763 378 -852
+27 -54 87 -146 131 -205 45 -60 131 -174 192 -254 144 -190 175 -236 269 -404
+207 -374 303 -490 690 -833 398 -353 557 -526 748 -817 177 -270 285 -491 507
+-1035 261 -640 373 -877 583 -1229 143 -239 178 -281 237 -281 54 0 90 34 90
+84 0 45 -103 330 -215 596 -120 283 -241 586 -388 975 -150 393 -223 563 -357
+821 -54 107 -95 194 -90 194 5 0 21 -5 37 -11 34 -14 703 -246 968 -336 308
+-105 339 -125 412 -275 64 -131 95 -252 168 -663 92 -519 118 -623 195 -778
+73 -146 164 -269 426 -573 177 -206 396 -476 546 -674 157 -206 176 -225 229
+-225 33 0 46 6 65 28 39 46 29 94 -55 272 -121 254 -333 560 -663 957 -177
+213 -256 352 -302 529 -14 52 -48 236 -76 409 -46 285 -99 579 -116 638 -6 22
+-5 22 47 17 30 -2 144 -9 254 -15 414 -23 683 -58 841 -110 35 -12 89 -38 121
+-59 65 -42 62 -40 404 -342 423 -373 505 -438 819 -645 386 -254 713 -436 784
+-438 101 -2 158 109 100 193 -10 13 -195 156 -413 319 -526 392 -605 460
+-1071 917 -282 278 -329 319 -429 383 -205 133 -534 190 -1272 222 -135 6
+-260 15 -278 20 -18 5 -52 27 -76 49 -60 55 -162 129 -215 156 -46 23 -349
+130 -905 320 -320 110 -575 207 -727 277 l-87 41 257 87 c141 48 322 111 402
+139 199 71 225 70 415 -21 164 -78 226 -98 311 -98 134 0 205 33 716 333 134
+78 200 102 252 91 38 -8 241 -109 471 -234 386 -210 711 -379 885 -460 102
+-48 223 -108 269 -134 94 -54 134 -63 139 -30 2 15 -19 41 -76 95 -94 88 -203
+167 -432 311 l-170 107 52 19 c106 39 131 44 192 40 72 -4 105 -20 446 -212
+477 -269 717 -368 1240 -510 112 -31 212 -56 221 -56 9 0 24 8 33 19 14 15 15
+23 5 44 -16 36 -226 133 -609 284 -286 112 -327 132 -683 335 -403 229 -505
+283 -584 303 -86 22 -109 19 -281 -36 -115 -38 -178 -52 -237 -56 l-80 -6
+-201 109 c-493 268 -567 297 -692 274 -30 -5 -56 -10 -56 -10 -1 0 -1 -30 -1
+-67 l0 -68 -104 -3 c-56 -1 -108 1 -115 7 -7 6 -43 -9 -106 -46 -353 -205
+-424 -237 -514 -231 -51 3 -87 16 -212 76 -253 122 -275 121 -671 -19 -416
+-147 -539 -184 -670 -203 -41 -6 -44 -4 -150 82 -193 158 -438 378 -505 453
+-84 95 -180 240 -319 481 -128 223 -192 318 -299 443 -139 162 -218 274 -278
+393 -64 126 -253 557 -439 1002 -64 151 -162 388 -220 525 -125 299 -167 382
+-232 457 -91 106 -127 133 -581 424 -189 121 -369 255 -431 320 -25 27 -99
+128 -164 224 -236 351 -226 341 -685 622 -188 115 -279 161 -365 183 -71 18
+-208 18 -290 0z m760 -4495 c38 -244 68 -385 124 -580 60 -213 115 -361 233
+-630 179 -406 218 -523 288 -865 139 -674 228 -885 454 -1076 137 -116 277
+-206 906 -579 206 -123 404 -244 440 -271 124 -90 221 -208 332 -399 140 -241
+207 -358 227 -391 l21 -36 -178 34 c-511 97 -639 115 -812 117 -193 1 -278
+-13 -436 -75 -154 -60 -248 -122 -509 -336 -538 -440 -921 -743 -970 -765 -18
+-8 -34 -4 -86 22 -166 84 -252 157 -511 437 -289 312 -490 478 -659 543 -42
+16 -140 48 -216 71 -234 70 -342 131 -558 318 -123 107 -495 460 -495 470 0 4
+61 82 136 172 75 90 180 220 232 289 173 227 275 310 585 478 261 143 354 213
+442 337 113 159 138 241 236 750 177 928 205 1064 252 1220 52 169 71 208 326
+645 143 244 161 273 167 267 2 -1 15 -77 29 -167z"/>
+<path d="M12005 12275 c-5 -2 -26 -6 -45 -9 l-35 -6 3 -646 c2 -449 -1 -650
+-8 -659 -12 -15 27 -127 115 -329 135 -310 155 -397 155 -666 0 -223 14 -397
+45 -564 14 -72 45 -241 70 -376 53 -286 101 -522 115 -566 21 -62 86 -105 160
+-106 98 0 178 74 278 255 27 51 108 200 178 332 l129 240 -5 325 -5 325 -65
+-100 c-66 -103 -167 -279 -325 -569 -49 -91 -90 -164 -92 -163 -1 2 -13 70
+-28 152 -14 83 -37 209 -51 280 -23 117 -26 166 -34 485 -6 267 -12 374 -25
+430 -22 100 -87 287 -174 500 -104 254 -136 388 -176 735 -8 71 -15 154 -15
+182 0 50 1 53 25 53 14 0 137 -22 273 -49 328 -66 467 -85 567 -77 44 3 91 9
+105 14 l25 7 0 231 0 231 -50 -15 c-96 -31 -219 -21 -525 41 -374 77 -535 99
+-585 82z"/>
+<path d="M9479 10608 c-17 -24 -41 -63 -54 -88 -22 -44 -58 -151 -52 -156 1
+-2 35 62 75 141 39 80 70 145 67 145 -3 0 -19 -19 -36 -42z"/>
+<path d="M6700 7319 c-281 -148 -437 -220 -777 -358 -147 -60 -313 -127 -367
+-150 l-100 -42 -75 36 c-42 20 -140 75 -219 121 -179 107 -222 125 -292 126
+-84 0 -141 -22 -355 -141 -161 -89 -147 -91 -463 70 -658 337 -778 373 -967
+296 -44 -18 -179 -93 -300 -166 -569 -346 -828 -492 -915 -518 -80 -23 -143
+-20 -240 12 -123 40 -186 39 -281 -7 -61 -29 -424 -281 -801 -555 -75 -55 -96
+-81 -83 -103 13 -22 55 -7 219 79 190 98 301 164 458 270 155 104 269 161 321
+161 24 0 83 -14 133 -31 243 -83 362 -43 959 317 171 103 367 222 437 264 202
+122 246 129 415 68 66 -24 804 -385 820 -402 6 -5 -248 -223 -399 -342 -223
+-178 -278 -226 -278 -247 0 -31 49 -15 192 64 222 122 406 250 596 416 46 40
+113 94 149 120 94 67 274 168 325 182 54 15 66 11 271 -97 l158 -84 -88 -50
+c-121 -69 -189 -117 -291 -202 -105 -88 -442 -430 -646 -656 -82 -91 -249
+-275 -370 -410 -121 -134 -246 -271 -277 -305 l-57 -60 -143 34 c-168 39 -463
+130 -674 208 -259 96 -324 114 -415 120 -202 12 -294 -36 -785 -413 -302 -231
+-454 -344 -770 -574 -309 -224 -441 -328 -467 -369 -37 -55 -12 -122 49 -135
+54 -12 154 36 463 222 278 167 720 468 1029 701 157 118 310 225 339 239 47
+21 65 24 131 20 66 -4 111 -18 356 -110 263 -100 583 -208 612 -208 7 0 13 -4
+13 -9 0 -13 -289 -277 -490 -447 -360 -304 -694 -561 -1095 -843 -357 -250
+-525 -373 -551 -404 -54 -65 -52 -147 7 -203 28 -27 36 -29 102 -29 64 0 84 6
+179 48 122 56 225 113 425 239 126 79 162 96 300 142 166 56 280 100 478 186
+66 29 217 92 335 140 355 146 748 318 860 377 240 126 384 248 548 466 231
+306 358 428 537 516 99 49 422 167 431 158 7 -6 -59 -154 -119 -267 -48 -91
+-210 -360 -267 -445 -43 -63 -80 -142 -80 -169 0 -32 36 -66 69 -66 53 0 152
+84 294 249 239 278 312 403 502 856 139 332 165 388 239 513 159 264 582 836
+744 1003 164 170 109 137 972 588 l165 86 -444 3 c-245 1 -449 6 -455 11 -7 6
+-92 -33 -236 -110z m-656 -846 c-293 -418 -419 -628 -528 -878 -32 -71 -67
+-139 -79 -150 -12 -11 -92 -44 -177 -74 -235 -82 -477 -178 -555 -221 -180
+-99 -306 -214 -490 -445 -130 -163 -293 -337 -366 -390 -67 -50 -157 -99 -324
+-177 -146 -69 -370 -165 -450 -194 -39 -15 -40 -14 -20 4 11 10 94 81 185 158
+250 211 573 540 976 994 946 1068 1001 1114 1654 1361 113 43 209 78 213 78 5
+1 -13 -29 -39 -66z"/>
+<path d="M7963 7400 c-13 -54 -158 -441 -204 -544 -106 -239 -157 -313 -555
+-801 -133 -164 -359 -450 -500 -634 -74 -97 -79 -107 -79 -152 0 -95 88 -136
+170 -78 128 92 558 504 792 761 232 254 453 587 540 816 33 87 208 600 216
+632 l6 25 -190 0 -190 0 -6 -25z"/>
+<path d="M8651 7225 c-75 -245 -77 -271 -20 -300 73 -38 121 -1 214 165 49 88
+132 256 155 315 7 19 4 20 -140 20 l-147 0 -62 -200z"/>
+<path d="M21922 6908 c-16 -16 -15 -101 2 -142 25 -61 252 -229 515 -381 133
+-77 296 -158 339 -168 21 -5 52 14 52 32 0 16 -61 62 -180 136 -249 155 -432
+293 -604 456 -84 79 -102 89 -124 67z"/>
+<path d="M2708 6203 c-53 -43 -160 -130 -239 -194 -79 -64 -187 -144 -239
+-178 -141 -90 -137 -86 -124 -108 23 -37 116 -9 272 80 143 82 267 173 374
+275 98 94 126 140 113 182 -13 40 -55 25 -157 -57z"/>
+<path d="M8967 3059 c-20 -11 -110 -88 -200 -173 -177 -167 -337 -303 -585
+-498 -160 -126 -184 -153 -168 -193 10 -28 38 -28 93 -1 172 84 690 480 874
+667 93 94 122 153 95 194 -20 31 -56 32 -109 4z"/>
+</g>
+<g transform="translate(0.000000,1287.000000) scale(0.100000,-0.100000)"
+fill="#de9a45" stroke="none">
+<path d="M14080 12531 c-74 -26 -265 -102 -425 -169 -159 -66 -335 -138 -390
+-159 l-100 -39 -3 -219 c-1 -121 0 -225 2 -232 8 -21 254 66 559 198 87 38
+160 69 162 69 2 0 -16 -42 -39 -92 -51 -109 -113 -284 -149 -418 -34 -126 -65
+-280 -132 -660 -89 -502 -93 -513 -286 -802 l-119 -178 0 -314 c0 -173 4 -317
+9 -320 5 -3 31 34 57 82 46 82 138 222 406 617 193 286 221 363 328 910 108
+550 132 643 230 851 l50 107 -2 405 c-2 260 -7 406 -13 408 -5 2 -71 -19 -145
+-45z"/>
+<path d="M11858 12235 c-113 -42 -223 -128 -793 -620 -464 -400 -397 -357
+-904 -592 -373 -173 -505 -244 -595 -323 -27 -24 -60 -78 -118 -193 -80 -160
+-80 -160 -115 -346 -35 -184 -36 -186 -74 -222 -20 -20 -122 -87 -226 -149
+-263 -158 -327 -203 -405 -284 -99 -101 -162 -236 -272 -576 -46 -146 -92
+-284 -100 -308 -9 -24 -41 -127 -72 -230 -60 -200 -86 -261 -135 -317 -43 -49
+-170 -130 -324 -209 -251 -128 -788 -421 -789 -431 -1 -6 157 -11 452 -13
+l452 -2 70 35 70 35 -2 -32 -3 -33 181 -3 c137 -2 184 1 192 10 5 7 23 56 40
+108 16 52 77 244 135 425 58 182 131 413 162 515 124 409 198 626 225 665 42
+60 86 98 185 159 87 54 90 55 93 32 2 -13 -6 -73 -17 -133 -11 -59 -39 -218
+-61 -353 -67 -404 -112 -574 -300 -1144 -49 -148 -87 -273 -84 -278 3 -4 66
+-8 140 -8 l134 0 20 33 c29 46 102 228 235 582 210 559 222 601 355 1256 32
+163 77 373 99 465 22 93 50 223 61 289 12 66 30 159 41 207 26 110 39 123 244
+223 120 58 441 209 476 223 4 2 -1 -34 -11 -80 -56 -261 -79 -483 -90 -883
+-10 -336 -23 -686 -36 -922 -8 -140 3 -197 46 -243 47 -50 105 -38 140 30 47
+93 109 515 129 880 6 107 16 283 21 390 18 334 38 468 111 775 28 116 52 219
+54 230 2 11 77 82 167 157 90 75 222 187 294 250 425 368 417 362 425 342 4
+-10 12 -70 18 -133 22 -213 91 -534 116 -532 7 1 10 222 10 643 0 713 6 660
+-67 633z"/>
+<path d="M10525 8070 c-27 -11 -61 -49 -74 -83 -32 -85 -135 -533 -127 -554 4
+-10 38 -13 146 -13 136 0 141 1 150 23 10 25 44 259 61 430 11 105 10 119 -5
+142 -34 52 -100 76 -151 55z"/>
+<path d="M21570 7497 c-52 -30 -94 -58 -92 -63 1 -5 50 -9 110 -9 l107 0 0 60
+c0 45 -4 60 -15 63 -8 1 -58 -22 -110 -51z"/>
+</g></svg>
+    <span class="rl-sig-rule"></span>
+    <p class="rl-sig-quote">人生走稜，<br>高低都是風景。</p>
+  </div>
+  <p class="rl-sig-by">Ridgeline · by Lucas</p>
+</footer>
+<style>
+/* 簽名掛在分頁底：留出底部導覽列高度，避免被遮住 */
+#app .rl-signature{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px) + 8px)}
+</style>
+<script>
+(function(){
+  var sig=document.getElementById('rlSig'); if(!sig) return;
+  var app=document.getElementById('app'); if(!app) return;
+  // 把簽名區塊掛到目前顯示的瀏覽分頁底部；答題(lesson)/完成(done)畫面不顯示
+  function place(){
+    var scr=app.querySelector('section.screen.on');
+    if(!scr||scr.id==='lesson'||scr.id==='done'){ sig.style.display='none'; return; }
+    sig.style.display='';
+    if(scr.lastElementChild!==sig) scr.appendChild(sig);
+  }
+  // childList：分頁重繪(innerHTML)後重新掛入；attributes(class)：切換分頁 .on 時重掛
+  new MutationObserver(place).observe(app,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  if(document.readyState!=='loading') place();
+  else document.addEventListener('DOMContentLoaded',place);
+})();
+</script>
+<script>/*ENG_SYNC_MODULE_V2*/
+window.__ENG_APP="pinju";window.__ENG_LABEL="英語拼句";
+window.__ENG_SUMMARY=function(){
+  var P=function(k){try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}}};
+  var PR=P('pinju2'), ST=P('pinjuStat'), MI=P('pinjuMist');
+  var total=(typeof flat!=='undefined'&&flat)?flat.length:0;
+  var passed=Object.keys(PR).length;
+  var s3=Object.keys(PR).filter(function(k){return PR[k]&&PR[k].stars===3}).length;
+  var stages=0;
+  try{ if(typeof STAGES!=='undefined'&&typeof stageAllDone==='function') stages=STAGES.filter(function(s,i){return stageAllDone(i)}).length; }catch(e){}
+  var wa=Object.keys(MI).filter(function(k){return MI[k]&&MI[k].box<6}).length;
+  return {pct: total?Math.round(passed/total*100):null, pctLabel:'關卡完成', total: total,
+    streak: ST.streak||0,
+    metrics:[{k:'過關',v:passed+'/'+total},{k:'三星',v:s3},{k:'大關全清',v:stages},{k:'待清錯題',v:wa}]};
+};
+(function(){
+  var APP=window.__ENG_APP||'app', LABEL=window.__ENG_LABEL||document.title;
+  var K={url:'eng_sync_url',key:'eng_sync_key',child:'eng_child'};
+  function G(k){ try{return localStorage.getItem(k)||''}catch(e){return ''} }
+  function cfg(){ return {url:G(K.url), key:G(K.key), child:G(K.child)}; }
+  function ready(){ var c=cfg(); return !!(c.url&&c.child); }
+  try{
+    var m=(location.hash||'').match(/sync=(.+)$/);
+    if(m){
+      var p=m[1].split('~').map(function(s){try{return decodeURIComponent(s)}catch(e){return s}});
+      if(p[0]) localStorage.setItem(K.url,p[0].replace(/\/+$/,''));
+      if(p[1]) localStorage.setItem(K.key,p[1]);
+      if(p[2]) localStorage.setItem(K.child,p[2]);
+      try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+      setTimeout(function(){ alert('✅ 家長後台已設定：這台是「'+(p[2]||'')+'」的裝置，之後所有英語 App 都會自動回報進度。'); },300);
+    }
+  }catch(e){}
+  function report(){ try{ return window.__ENG_SUMMARY()||{}; }catch(e){ return {}; } }
+  var t=null;
+  function push(beacon){
+    var c=cfg(); if(!c.url||!c.child) return;
+    var r=report();
+    // 把 App 內的真實總數存到共用 key，供「一鍵導入頁」用(免寫死、內容變了也跟得上)
+    try{ if(typeof r.total==='number' && r.total>0) localStorage.setItem('eng_total_'+APP, r.total); }catch(e){}
+    var body=JSON.stringify({child:c.child, app:APP, label:LABEL, key:c.key, ts:Date.now(),
+      pct:(r.pct===undefined?null:r.pct), pctLabel:r.pctLabel||'進度',
+      streak:(r.streak===undefined?null:r.streak), metrics:r.metrics||[]});
+    var url=c.url+'/report';
+    try{
+      if(beacon && navigator.sendBeacon){ navigator.sendBeacon(url, new Blob([body],{type:'text/plain'})); return; }
+      fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:body,keepalive:true})
+        .then(function(){setDot(true)}).catch(function(){setDot(false)});
+    }catch(e){}
+  }
+  function schedule(){ if(!ready()) return; if(t) clearTimeout(t); t=setTimeout(function(){push(false)},6000); }
+  try{
+    var _si=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(k,v){
+      var r=_si.apply(this,arguments);
+      try{ var s=String(k); if(s!=='eng_sync_url'&&s!=='eng_sync_key'&&s!=='eng_child') schedule(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+  window.addEventListener('pagehide',function(){ if(ready()) push(true); });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'&&ready()) push(true); });
+  function setDot(ok){ var d=document.getElementById('engSyncDot'); if(d) d.style.background=ok?'#2eb872':'#e8504f'; }
+  window.engSyncNow=function(){ push(false); };
+  window.engSync={push:push,cfg:cfg,report:report};
+  setTimeout(function(){
+    if(!ready()) return;
+    if(document.getElementById('engSyncBadge')) return;
+    var c=cfg();
+    var b=document.createElement('div'); b.id='engSyncBadge';
+    b.style.cssText='position:fixed;left:8px;bottom:calc(var(--nav-h,60px) + env(safe-area-inset-bottom) + 8px);z-index:60;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px;display:flex;align-items:center;gap:5px;cursor:pointer';
+    b.innerHTML='<span id="engSyncDot" style="width:8px;height:8px;border-radius:50%;background:#2eb872;display:inline-block"></span>☁️ '+c.child;
+    b.title='點我立即同步'; b.onclick=function(){ engSyncNow(); };
+    document.body.appendChild(b);
+    push(false);
+  }, 900);
+})();
+</script>
+
+
+
+
+<!--RIDGELINE_BRAND_END-->
+
+
+<script>/*HUBBACK*/(function(){if(window.__hubback)return;window.__hubback=1;
+var OK=["https://fullmodel-star.github.io/english-hub/","https://fullmodel-star.github.io/english-apps/"];   /* 白名單：擋開放導向 */
+var K='eng.hub.origin';
+function ok(u){for(var i=0;i<OK.length;i++)if(OK[i]===u)return u;return null;}
+function remember(){
+  try{
+    var q=new URLSearchParams(location.search).get('hub');
+    var v=q&&ok(q);
+    if(v){localStorage.setItem(K,v);return v;}
+    /* 沒帶 query 也試 referrer：使用者可能是從 hub 的舊書籤／自己打的連結進來的 */
+    if(document.referrer){var r=ok(new URL(document.referrer).origin+new URL(document.referrer).pathname);
+      if(r){localStorage.setItem(K,r);return r;}}
+    return ok(localStorage.getItem(K)||'');
+  }catch(e){return null;}
+}
+var hub=remember();
+window.__engHub=function(){
+  /* 記住的優先；沒有才退回 App 內寫死的 CFG.hub（維持拆兩層時的預設分流） */
+  try{return hub||window.__engHubDefault||null;}catch(e){return window.__engHubDefault||null;}
+};
+window.__engGoHub=function(){
+  var u=window.__engHub(); if(!u)return;
+  /* 家庭 hub 是 iframe srcdoc → 一定要跳到最上層，否則只是在鎖裡面再疊一層 */
+  try{ (window.top||window).location.href=u; }catch(e){ location.href=u; }
+};
+/* 網址列把 ?hub= 收乾淨，小朋友分享連結時不會把入口資訊帶出去，重整也不會殘留 */
+try{ if(new URLSearchParams(location.search).get('hub')&&history.replaceState){
+  var u=new URL(location.href);u.searchParams.delete('hub');
+  history.replaceState(null,'',u.pathname+(u.search==='?'?'':u.search)+u.hash);} }catch(e){}
+})();</script>
+</body>
+</html>
