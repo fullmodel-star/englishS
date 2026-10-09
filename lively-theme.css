@@ -1,0 +1,14 @@
+/* 由 packages/lively/sync_lively.py 產生，請勿手改（改 apps.json 再重跑）。
+   903_englishS｜主題色相來源 #1f8fd6｜engine=pinju｜level=full */
+:root{--lv-engine:pinju;--lv-level:full}
+html:not([data-theme="dark"]),html:not([data-theme="dark"]) body{
+  --lv-btn:#61B2E5;--lv-btn-d:#3191CE;--lv-ink:#0C3955;--lv-acc:#1A6EA2;
+  --lv-soft:#E4F2FB;--lv-soft2:#C7E0F0;
+}
+html[data-theme="dark"],html[data-theme="dark"] body{
+  --lv-btn:#61B2E5;--lv-btn-d:#3191CE;--lv-ink:#0C3955;--lv-acc:#50A9E2;
+  --lv-soft:#253641;--lv-soft2:#375162;
+}
+@media (prefers-color-scheme:dark){html:not([data-theme]),html:not([data-theme]) body{
+  --lv-acc:#50A9E2;--lv-soft:#253641;--lv-soft2:#375162;
+}}
